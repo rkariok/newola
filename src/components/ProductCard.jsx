@@ -14,8 +14,13 @@ export const ProductCard = ({
   loadingAI,
   canRemove = true 
 }) => {
-  const [colorFilter, setColorFilter] = useState('');
+  const [colorFilter, setColorFilter] = useState(product.color || '');
   const [showColorDropdown, setShowColorDropdown] = useState(false);
+  
+  // Update colorFilter when product.color changes externally
+  useEffect(() => {
+    setColorFilter(product.color || '');
+  }, [product.color]);
   
   // Get unique values based on current selections (smart filtering)
   const getFilteredOptions = () => {
@@ -271,21 +276,33 @@ export const ProductCard = ({
             </label>
             <input
               type="text"
-              value={product.color || colorFilter}
+              value={colorFilter}
               onChange={(e) => {
                 setColorFilter(e.target.value);
+                // Only update the product color if it's an exact match
                 if (colors.includes(e.target.value)) {
                   updateField('color', e.target.value);
+                } else if (e.target.value === '') {
+                  // Clear the color field if input is empty
+                  updateField('color', '');
                 }
               }}
               onFocus={() => setShowColorDropdown(true)}
-              onBlur={() => setTimeout(() => setShowColorDropdown(false), 200)}
-              placeholder="Type to filter..."
+              onBlur={() => {
+                setTimeout(() => {
+                  setShowColorDropdown(false);
+                  // If the current filter doesn't match any color, clear it
+                  if (!colors.includes(colorFilter) && colorFilter !== '') {
+                    setColorFilter(product.color || '');
+                  }
+                }, 200);
+              }}
+              placeholder="Type to filter colors..."
               className={`w-full px-3 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                 colors.length === 0 ? 'border-red-300' : 'border-gray-300'
               }`}
             />
-            {showColorDropdown && filteredColors.length > 0 && (
+            {showColorDropdown && colorFilter && filteredColors.length > 0 && (
               <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                 {filteredColors.map((color, i) => (
                   <button
@@ -299,6 +316,11 @@ export const ProductCard = ({
                     {color}
                   </button>
                 ))}
+              </div>
+            )}
+            {product.color && (
+              <div className="absolute right-2 top-8 text-xs text-gray-500">
+                Selected: {product.color}
               </div>
             )}
           </div>
