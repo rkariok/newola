@@ -35,8 +35,19 @@ export const optimizeMultiTypeLayout = (products, stoneOptions, settings) => {
       try {
         const pieces = productsByStone[stoneType];
         const stone = stoneOptions.find(s => {
+          // Match by composite identifier or individual fields
           const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-          return stoneIdentifier === stoneType;
+          if (stoneType === stoneIdentifier) {
+            return true;
+          }
+          // Also check if this is a product with separate fields
+          const firstProduct = pieces[0]?.originalProduct;
+          if (firstProduct) {
+            return s.Brand === firstProduct.brand && 
+                   s.Type === firstProduct.type && 
+                   s.Color === firstProduct.color;
+          }
+          return false;
         });
         
         if (!stone) {
@@ -255,8 +266,22 @@ export const applyMultiTypeOptimization = (products, optimizationResults, stoneO
       if (result.error || !result.placedPieces) return;
       
       const stone = stoneOptions.find(s => {
+        // Match by composite identifier or individual fields
         const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-        return stoneIdentifier === stoneType;
+        if (stoneType === stoneIdentifier) {
+          return true;
+        }
+        // Check against first product in the group
+        const firstProduct = result.placedPieces[0];
+        if (firstProduct) {
+          const originalProduct = products[firstProduct.productIndex];
+          if (originalProduct) {
+            return s.Brand === originalProduct.brand && 
+                   s.Type === originalProduct.type && 
+                   s.Color === originalProduct.color;
+          }
+        }
+        return false;
       });
       if (!stone) return;
       
