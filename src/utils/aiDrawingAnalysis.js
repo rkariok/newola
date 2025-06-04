@@ -131,12 +131,21 @@ export const handleClaudeMultiplePiecesExtraction = (claudeData, currentIndex, p
     }
     
     // Use the current stone from the product being modified
-    // If stoneFormatter is provided, use it to format the stone identifier
+    // Extract brand, type, color from the current product
+    const currentBrand = products[currentIndex].brand || '';
+    const currentType = products[currentIndex].type || '';
+    const currentColor = products[currentIndex].color || '';
+    const currentFinish = products[currentIndex].finish || '';
     const currentStone = products[currentIndex].stone || 
-                        (stoneOptions[0] && stoneFormatter ? stoneFormatter(stoneOptions[0]) : '');
+                        (currentBrand && currentType && currentColor ? 
+                         `${currentBrand} ${currentType} - ${currentColor}` : '');
     
     newProducts.push({
       stone: currentStone,
+      brand: currentBrand,
+      type: currentType,
+      color: currentColor,
+      finish: currentFinish,
       width: group.width.toString(),
       depth: group.depth.toString(),
       quantity: group.quantity,
