@@ -24,7 +24,17 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
       
       const stone = stoneOptions.find(s => {
         const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-        return stoneIdentifier === stoneType;
+        if (stoneIdentifier === stoneType) {
+          return true;
+        }
+        // Check first product in results
+        const firstProduct = allResults.find(p => p.stone === stoneType);
+        if (firstProduct) {
+          return s.Brand === firstProduct.brand && 
+                 s.Type === firstProduct.type && 
+                 s.Color === firstProduct.color;
+        }
+        return false;
       });
       if (!stone) return;
       
@@ -503,7 +513,8 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
                             p.result?.efficiency > 60 ? 'efficiency-medium' : 'efficiency-low';
             const stone = stoneOptions.find(s => {
               const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-              return stoneIdentifier === p.stone;
+              return stoneIdentifier === p.stone || 
+                     (s.Brand === p.brand && s.Type === p.type && s.Color === p.color);
             });
             const markup = parseFloat(stone?.["Mark Up"]) || 1;
             
@@ -521,7 +532,7 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
                 <div class="type-details">
                   <div class="detail-item">
                     <div class="detail-label">Stone Type</div>
-                    <div class="detail-value">${p.stone}</div>
+                    <div class="detail-value">${p.brand || ''} ${p.type || ''} - ${p.color || ''}${p.finish ? ` (${p.finish})` : ''}${p.thickness ? ` - ${p.thickness}` : ''}</div>
                   </div>
                   <div class="detail-item">
                     <div class="detail-label">Dimensions</div>
