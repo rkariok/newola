@@ -13,25 +13,7 @@ export const sendQuoteEmail = async (userInfo, allResults, stoneOptions) => {
 
   try {
     if (!window.emailjs) {
-      const response = await window.emailjs.send(
-      'service_4xwxsbp',
-      'template_pw68h0p',
-      templateParams
-    );
-
-    if (response.status === 200) {
-      alert(`✅ Quote sent successfully to ${userInfo.email}!\n\nThe customer will receive a beautifully formatted quote with all details.`);
-      return { success: true };
-    } else {
-      throw new Error('Failed to send email');
-    }
-    
-  } catch (error) {
-    console.error('Failed to send email:', error);
-    alert(`❌ Failed to send email: ${error.message || 'Unknown error'}\n\nPlease check your EmailJS configuration and try again.`);
-    return { success: false, error: error.message };
-  }
-}; script = document.createElement('script');
+      const script = document.createElement('script');
       script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
       document.head.appendChild(script);
       await new Promise(resolve => script.onload = resolve);
@@ -133,4 +115,22 @@ export const sendQuoteEmail = async (userInfo, allResults, stoneOptions) => {
       html_content: emailHTML
     };
 
-    const
+    const response = await window.emailjs.send(
+      'service_4xwxsbp',
+      'template_pw68h0p',
+      templateParams
+    );
+
+    if (response.status === 200) {
+      alert(`✅ Quote sent successfully to ${userInfo.email}!\n\nThe customer will receive a beautifully formatted quote with all details.`);
+      return { success: true };
+    } else {
+      throw new Error('Failed to send email');
+    }
+    
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    alert(`❌ Failed to send email: ${error.message || 'Unknown error'}\n\nPlease check your EmailJS configuration and try again.`);
+    return { success: false, error: error.message };
+  }
+};
