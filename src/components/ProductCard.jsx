@@ -21,27 +21,23 @@ export const ProductCard = ({
   const getFilteredOptions = () => {
     let filtered = [...stoneOptions];
     
-    // Filter by brand if selected
+    // Apply filters progressively - each filter only applies if the field has a value
     if (product.brand) {
       filtered = filtered.filter(s => s.Brand === product.brand);
     }
     
-    // Filter by type if selected
     if (product.type) {
       filtered = filtered.filter(s => s.Type === product.type);
     }
     
-    // Filter by color if selected
     if (product.color) {
       filtered = filtered.filter(s => s.Color === product.color);
     }
     
-    // Filter by finish if selected
     if (product.finish) {
       filtered = filtered.filter(s => s.Finish === product.finish);
     }
     
-    // Filter by slab size if selected
     if (product.slabSize) {
       filtered = filtered.filter(s => {
         const size = `${s["Slab Width"]}" x ${s["Slab Height"]}"`;
@@ -49,8 +45,42 @@ export const ProductCard = ({
       });
     }
     
-    // Filter by thickness if selected
     if (product.thickness) {
+      filtered = filtered.filter(s => s.Thickness === product.thickness);
+    }
+    
+    return filtered;
+  };
+  
+  // Get available options for each field based on partial selections
+  const getAvailableOptions = (field) => {
+    let filtered = [...stoneOptions];
+    
+    // Apply all filters EXCEPT the field we're checking options for
+    if (field !== 'brand' && product.brand) {
+      filtered = filtered.filter(s => s.Brand === product.brand);
+    }
+    
+    if (field !== 'type' && product.type) {
+      filtered = filtered.filter(s => s.Type === product.type);
+    }
+    
+    if (field !== 'color' && product.color) {
+      filtered = filtered.filter(s => s.Color === product.color);
+    }
+    
+    if (field !== 'finish' && product.finish) {
+      filtered = filtered.filter(s => s.Finish === product.finish);
+    }
+    
+    if (field !== 'slabSize' && product.slabSize) {
+      filtered = filtered.filter(s => {
+        const size = `${s["Slab Width"]}" x ${s["Slab Height"]}"`;
+        return size === product.slabSize;
+      });
+    }
+    
+    if (field !== 'thickness' && product.thickness) {
       filtered = filtered.filter(s => s.Thickness === product.thickness);
     }
     
@@ -59,14 +89,14 @@ export const ProductCard = ({
   
   const filteredStones = getFilteredOptions();
   
-  // Extract unique values from filtered stones
-  const brands = [...new Set(filteredStones.map(s => s.Brand))].filter(Boolean).sort();
-  const types = [...new Set(filteredStones.map(s => s.Type))].filter(Boolean).sort();
-  const colors = [...new Set(filteredStones.map(s => s.Color))].filter(Boolean).sort();
-  const finishes = [...new Set(filteredStones.map(s => s.Finish))].filter(Boolean).sort();
-  const slabSizes = [...new Set(filteredStones.map(s => `${s["Slab Width"]}" x ${s["Slab Height"]}"`))]
+  // Extract unique values from available options for each field
+  const brands = [...new Set(getAvailableOptions('brand').map(s => s.Brand))].filter(Boolean).sort();
+  const types = [...new Set(getAvailableOptions('type').map(s => s.Type))].filter(Boolean).sort();
+  const colors = [...new Set(getAvailableOptions('color').map(s => s.Color))].filter(Boolean).sort();
+  const finishes = [...new Set(getAvailableOptions('finish').map(s => s.Finish))].filter(Boolean).sort();
+  const slabSizes = [...new Set(getAvailableOptions('slabSize').map(s => `${s["Slab Width"]}" x ${s["Slab Height"]}"`))]
     .filter(Boolean).sort();
-  const thicknesses = [...new Set(filteredStones.map(s => s.Thickness))].filter(Boolean).sort();
+  const thicknesses = [...new Set(getAvailableOptions('thickness').map(s => s.Thickness))].filter(Boolean).sort();
   
   // Filter colors based on user input
   const filteredColors = colors.filter(color =>
@@ -101,20 +131,15 @@ export const ProductCard = ({
                (!newFilter.thickness || s.Thickness === newFilter.thickness);
       });
       
-      if (matchingStone) {
-        // Update stone identifier
-        const stoneIdentifier = `${matchingStone.Brand} ${matchingStone.Type} - ${matchingStone.Color}`;
-        onUpdate(index, 'stone', stoneIdentifier);
-        
-        // Auto-complete other fields if they're empty
-        if (!product.brand) onUpdate(index, 'brand', matchingStone.Brand);
-        if (!product.type) onUpdate(index, 'type', matchingStone.Type);
-        if (!product.color) onUpdate(index, 'color', matchingStone.Color);
-        if (!product.finish) onUpdate(index, 'finish', matchingStone.Finish);
-        if (!product.slabSize) {
-          onUpdate(index, 'slabSize', `${matchingStone["Slab Width"]}" x ${matchingStone["Slab Height"]}"`);
+      // Only update stone identifier if ALL required fields are selected
+      if (newFilter.brand && newFilter.type && newFilter.color) {
+        if (matchingStone) {
+          const stoneIdentifier = `${matchingStone.Brand} ${matchingStone.Type} - ${matchingStone.Color}`;
+          onUpdate(index, 'stone', stoneIdentifier);
         }
-        if (!product.thickness) onUpdate(index, 'thickness', matchingStone.Thickness);
+      } else {
+        // Clear stone identifier if not all required fields are selected
+        onUpdate(index, 'stone', '');
       }
     }
   };
