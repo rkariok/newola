@@ -48,13 +48,24 @@ export const calculateMaxPiecesPerSlab = (pieceW, pieceH, slabW, slabH, includeK
 };
 
 export const calculateProductResults = (product, stoneOptions, settings) => {
-  // Find stone by matching the composite identifier
+  // Find stone by matching ALL the fields (brand, type, color)
   const stone = stoneOptions.find(s => {
+    // First try to match by the composite identifier (if it exists)
     const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-    return stoneIdentifier === product.stone;
+    if (product.stone === stoneIdentifier) {
+      return true;
+    }
+    
+    // Otherwise match by individual fields
+    return s.Brand === product.brand && 
+           s.Type === product.type && 
+           s.Color === product.color;
   });
   
-  if (!stone) return { ...product, result: null };
+  if (!stone) {
+    console.log('No stone found for:', product);
+    return { ...product, result: null };
+  }
 
   const slabCost = parseFloat(stone["Slab Cost"]);
   const fabCost = parseFloat(stone["Fab Cost"]);
@@ -63,16 +74,34 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   const d = parseFloat(product.depth);
   const quantity = parseInt(product.quantity);
 
-  if (!w || !d || isNaN(slabCost) || isNaN(fabCost) || isNaN(markup)) return { ...product, result: null };
+  if (!w || !d || isNaN(slabCost) || isNaN(fabCost) || isNaN(markup)) {
+    console.log('Invalid values for calculation:', { w, d, slabCost, fabCost, markup });
+    return { ...product, result: null };
+  }
 
-  const slabWidth = parseFloat(stone["Slab Width"]);
-  const slabHeight = parseFloat(stone["Slab Height"]);
+  // Get slab dimensions - either from product selection or from stone data
+  let slabWidth, slabHeight;
+  
+  if (product.slabSize) {
+    // Parse from "126" x 63"" format
+    const sizeParts = product.slabSize.match(/(\d+)"\s*x\s*(\d+)"/);
+    if (sizeParts) {
+      slabWidth = parseFloat(sizeParts[1]);
+      slabHeight = parseFloat(sizeParts[2]);
+    } else {
+      slabWidth = parseFloat(stone["Slab Width"]);
+      slabHeight = parseFloat(stone["Slab Height"]);
+    }
+  } else {
+    slabWidth = parseFloat(stone["Slab Width"]);
+    slabHeight = parseFloat(stone["Slab Height"]);
+  }
 
   const pieces = Array(quantity).fill().map((_, i) => ({
     id: i + 1,
     width: w,
     depth: d,
-    name: `${product.stone} #${i + 1}`
+    name: `${product.brand || ''} ${product.type || ''} - ${product.color || ''} #${i + 1}`
   }));
 
   // Always calculate with kerf consideration (kerf can be 0)
@@ -113,7 +142,16 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
       installationCost,  // This is the base installation cost (no markup)
       rawCost,          // This is material + fabrication + installation (no markup)
       finalPrice,       // This is the final price with markup applied to everything
-      topsPerSlab: maxPiecesPerSlab
+      topsPerSlab: maxPiecesPerSlab,
+      slabWidth,        // Include slab dimensions in result
+      slabHeight,
+      stoneDetails: {   // Include all stone details for display
+        brand: stone.Brand,
+        type: stone.Type,
+        color: stone.Color,
+        finish: stone.Finish,
+        thickness: stone.Thickness
+      }
     }
   };
 };
