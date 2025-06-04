@@ -36,7 +36,17 @@ export const ResultsView = ({
       
       const stone = stoneOptions.find(s => {
         const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-        return stoneIdentifier === stoneType;
+        if (stoneIdentifier === stoneType) {
+          return true;
+        }
+        // Check first product in results
+        const firstProduct = allResults.find(p => p.stone === stoneType);
+        if (firstProduct) {
+          return s.Brand === firstProduct.brand && 
+                 s.Type === firstProduct.type && 
+                 s.Color === firstProduct.color;
+        }
+        return false;
       });
       if (!stone) return;
       
@@ -150,8 +160,19 @@ export const ResultsView = ({
                 if (optimizationResult.error || !optimizationResult.slabs) return null;
                 
                 const stone = stoneOptions.find(s => {
+                  // Match by composite identifier
                   const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-                  return stoneIdentifier === stoneType;
+                  if (stoneIdentifier === stoneType) {
+                    return true;
+                  }
+                  // Check first product in results  
+                  const firstProduct = allResults.find(p => p.stone === stoneType);
+                  if (firstProduct) {
+                    return s.Brand === firstProduct.brand && 
+                           s.Type === firstProduct.type && 
+                           s.Color === firstProduct.color;
+                  }
+                  return false;
                 });
                 const slabWidth = parseFloat(stone?.["Slab Width"]) || 126;
                 const slabHeight = parseFloat(stone?.["Slab Height"]) || 63;
@@ -207,8 +228,15 @@ export const ResultsView = ({
                 if (!product.result) return null;
                 
                 const stone = stoneOptions.find(s => {
+                  // Match by composite identifier
                   const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-                  return stoneIdentifier === product.stone;
+                  if (stoneIdentifier === product.stone) {
+                    return true;
+                  }
+                  // Match by individual fields
+                  return s.Brand === product.brand && 
+                         s.Type === product.type && 
+                         s.Color === product.color;
                 });
                 const slabWidth = parseFloat(stone?.["Slab Width"]) || 126;
                 const slabHeight = parseFloat(stone?.["Slab Height"]) || 63;
@@ -300,8 +328,15 @@ export const ResultsView = ({
         <div className="space-y-4 mb-8">
           {allResults.map((p, i) => {
             const stone = stoneOptions.find(s => {
+              // Match by composite identifier
               const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-              return stoneIdentifier === p.stone;
+              if (stoneIdentifier === p.stone) {
+                return true;
+              }
+              // Match by individual fields
+              return s.Brand === p.brand && 
+                     s.Type === p.type && 
+                     s.Color === p.color;
             });
             const markup = parseFloat(stone?.["Mark Up"]) || 1;
             
@@ -314,7 +349,11 @@ export const ResultsView = ({
                       <h3 className="text-xl font-semibold text-gray-900">
                         {p.customName || `Type ${i + 1}`}
                       </h3>
-                      <p className="text-gray-600 text-sm">{p.stone}</p>
+                      <p className="text-gray-600 text-sm">
+                        {p.brand} {p.type} - {p.color}
+                        {p.finish && ` (${p.finish})`}
+                        {p.thickness && ` - ${p.thickness}`}
+                      </p>
                     </div>
                     {p.result?.multiProductOptimized && (
                       <div className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
@@ -398,7 +437,8 @@ export const ResultsView = ({
                 Material: ${allResults.reduce((sum, p) => {
                   const stone = stoneOptions.find(s => {
                     const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-                    return stoneIdentifier === p.stone;
+                    return stoneIdentifier === p.stone || 
+                           (s.Brand === p.brand && s.Type === p.type && s.Color === p.color);
                   });
                   const markup = parseFloat(stone?.["Mark Up"]) || 1;
                   return sum + ((p.result?.materialCost || 0) * markup);
@@ -406,7 +446,8 @@ export const ResultsView = ({
                 Fabrication: ${allResults.reduce((sum, p) => {
                   const stone = stoneOptions.find(s => {
                     const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-                    return stoneIdentifier === p.stone;
+                    return stoneIdentifier === p.stone || 
+                           (s.Brand === p.brand && s.Type === p.type && s.Color === p.color);
                   });
                   const markup = parseFloat(stone?.["Mark Up"]) || 1;
                   return sum + ((p.result?.fabricationCost || 0) * markup);
@@ -415,7 +456,8 @@ export const ResultsView = ({
                   <> • Installation: ${allResults.reduce((sum, p) => {
                     const stone = stoneOptions.find(s => {
                       const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-                      return stoneIdentifier === p.stone;
+                      return stoneIdentifier === p.stone || 
+                             (s.Brand === p.brand && s.Type === p.type && s.Color === p.color);
                     });
                     const markup = parseFloat(stone?.["Mark Up"]) || 1;
                     return sum + ((p.result?.installationCost || 0) * markup);
