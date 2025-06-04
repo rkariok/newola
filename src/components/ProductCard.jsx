@@ -144,19 +144,60 @@ export const ProductCard = ({
       onUpdate(index, 'thickness', '');
     }
     
-    // Check if we can create a stone identifier after the update
-    if (['brand', 'type', 'color', 'finish', 'slabSize', 'thickness'].includes(field)) {
-      // Get the current state after updates
-      const newBrand = field === 'brand' ? value : product.brand;
-      const newType = field === 'type' ? value : (field === 'brand' ? '' : product.type);
-      const newColor = field === 'color' ? value : (['brand', 'type'].includes(field) ? '' : product.color);
+    // After updating, check if there's only one matching stone
+    setTimeout(() => {
+      // Get current selections
+      const currentBrand = field === 'brand' ? value : product.brand;
+      const currentType = field === 'type' ? value : (field === 'brand' ? '' : product.type);
+      const currentColor = field === 'color' ? value : (['brand', 'type'].includes(field) ? '' : product.color);
+      const currentFinish = field === 'finish' ? value : (['brand', 'type', 'color'].includes(field) ? '' : product.finish);
+      const currentSlabSize = field === 'slabSize' ? value : (['brand', 'type', 'color', 'finish'].includes(field) ? '' : product.slabSize);
+      const currentThickness = field === 'thickness' ? value : (['brand', 'type', 'color', 'finish', 'slabSize'].includes(field) ? '' : product.thickness);
       
-      // Only create stone identifier if brand, type, and color are all selected
-      if (newBrand && newType && newColor) {
+      // Find all stones that match current selections
+      let matchingStones = stoneOptions.filter(s => {
+        const sizeMatch = !currentSlabSize || `${s["Slab Width"]}" x ${s["Slab Height"]}"` === currentSlabSize;
+        
+        return (!currentBrand || s.Brand === currentBrand) &&
+               (!currentType || s.Type === currentType) &&
+               (!currentColor || s.Color === currentColor) &&
+               (!currentFinish || s.Finish === currentFinish) &&
+               sizeMatch &&
+               (!currentThickness || s.Thickness === currentThickness);
+      });
+      
+      // If there's exactly one matching stone, auto-fill all remaining fields
+      if (matchingStones.length === 1) {
+        const stone = matchingStones[0];
+        
+        // Auto-fill empty fields
+        if (!currentType && stone.Type) {
+          onUpdate(index, 'type', stone.Type);
+        }
+        if (!currentColor && stone.Color) {
+          onUpdate(index, 'color', stone.Color);
+          setColorFilter(stone.Color);
+        }
+        if (!currentFinish && stone.Finish) {
+          onUpdate(index, 'finish', stone.Finish);
+        }
+        if (!currentSlabSize) {
+          const size = `${stone["Slab Width"]}" x ${stone["Slab Height"]}"`;
+          onUpdate(index, 'slabSize', size);
+        }
+        if (!currentThickness && stone.Thickness) {
+          onUpdate(index, 'thickness', stone.Thickness);
+        }
+        
+        // Set stone identifier
+        const stoneIdentifier = `${stone.Brand} ${stone.Type} - ${stone.Color}`;
+        onUpdate(index, 'stone', stoneIdentifier);
+      } else if (currentBrand && currentType && currentColor) {
+        // Only create stone identifier if brand, type, and color are all selected
         const matchingStone = stoneOptions.find(s => 
-          s.Brand === newBrand && 
-          s.Type === newType && 
-          s.Color === newColor
+          s.Brand === currentBrand && 
+          s.Type === currentType && 
+          s.Color === currentColor
         );
         
         if (matchingStone) {
@@ -164,7 +205,7 @@ export const ProductCard = ({
           onUpdate(index, 'stone', stoneIdentifier);
         }
       }
-    }
+    }, 0);
   };
 
   // Clear invalid selections when options change
