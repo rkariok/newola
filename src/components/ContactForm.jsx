@@ -81,6 +81,8 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
           let selectedType = '';
           let selectedColor = '';
           let selectedFinish = '';
+          let selectedSlabSize = '';
+          let selectedThickness = '';
           let selectedStone = '';
           
           // If AI found a stone type, try to match it
@@ -96,6 +98,8 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
               selectedType = match.Type;
               selectedColor = match.Color;
               selectedFinish = match.Finish;
+              selectedSlabSize = `${match["Slab Width"]}" x ${match["Slab Height"]}"`;
+              selectedThickness = match.Thickness;
               selectedStone = `${match.Brand} ${match.Type} - ${match.Color}`;
             }
           }
@@ -106,6 +110,8 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
             type: selectedType,
             color: selectedColor,
             finish: selectedFinish,
+            slabSize: selectedSlabSize,
+            thickness: selectedThickness,
             width: p.width.toString(),
             depth: p.depth.toString(),
             quantity: p.quantity,
