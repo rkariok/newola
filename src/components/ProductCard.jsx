@@ -17,69 +17,136 @@ export const ProductCard = ({
   const [colorFilter, setColorFilter] = useState('');
   const [showColorDropdown, setShowColorDropdown] = useState(false);
   
-  // Extract unique values for dropdowns
-  const brands = [...new Set(stoneOptions.map(s => s.Brand))].filter(Boolean);
-  const types = [...new Set(stoneOptions.map(s => s.Type))].filter(Boolean);
-  const finishes = [...new Set(stoneOptions.map(s => s.Finish))].filter(Boolean);
-  
-  // Get colors based on selected brand and type
-  const getAvailableColors = () => {
-    return [...new Set(stoneOptions
-      .filter(s => 
-        (!product.brand || s.Brand === product.brand) &&
-        (!product.type || s.Type === product.type)
-      )
-      .map(s => s.Color)
-    )].filter(Boolean);
+  // Get unique values based on current selections (smart filtering)
+  const getFilteredOptions = () => {
+    let filtered = [...stoneOptions];
+    
+    // Filter by brand if selected
+    if (product.brand) {
+      filtered = filtered.filter(s => s.Brand === product.brand);
+    }
+    
+    // Filter by type if selected
+    if (product.type) {
+      filtered = filtered.filter(s => s.Type === product.type);
+    }
+    
+    // Filter by color if selected
+    if (product.color) {
+      filtered = filtered.filter(s => s.Color === product.color);
+    }
+    
+    // Filter by finish if selected
+    if (product.finish) {
+      filtered = filtered.filter(s => s.Finish === product.finish);
+    }
+    
+    // Filter by slab size if selected
+    if (product.slabSize) {
+      filtered = filtered.filter(s => {
+        const size = `${s["Slab Width"]}" x ${s["Slab Height"]}"`;
+        return size === product.slabSize;
+      });
+    }
+    
+    // Filter by thickness if selected
+    if (product.thickness) {
+      filtered = filtered.filter(s => s.Thickness === product.thickness);
+    }
+    
+    return filtered;
   };
   
-  const availableColors = getAvailableColors();
+  const filteredStones = getFilteredOptions();
+  
+  // Extract unique values from filtered stones
+  const brands = [...new Set(filteredStones.map(s => s.Brand))].filter(Boolean).sort();
+  const types = [...new Set(filteredStones.map(s => s.Type))].filter(Boolean).sort();
+  const colors = [...new Set(filteredStones.map(s => s.Color))].filter(Boolean).sort();
+  const finishes = [...new Set(filteredStones.map(s => s.Finish))].filter(Boolean).sort();
+  const slabSizes = [...new Set(filteredStones.map(s => `${s["Slab Width"]}" x ${s["Slab Height"]}"`))]
+    .filter(Boolean).sort();
+  const thicknesses = [...new Set(filteredStones.map(s => s.Thickness))].filter(Boolean).sort();
   
   // Filter colors based on user input
-  const filteredColors = availableColors.filter(color =>
+  const filteredColors = colors.filter(color =>
     color.toLowerCase().startsWith(colorFilter.toLowerCase())
   );
 
   const updateField = (field, value) => {
     onUpdate(index, field, value);
     
-    // Update the stone identifier when brand, type, or color changes
-    if (field === 'brand' || field === 'type' || field === 'color') {
-      const newBrand = field === 'brand' ? value : (product.brand || '');
-      const newType = field === 'type' ? value : (product.type || '');
-      const newColor = field === 'color' ? value : (product.color || '');
+    // When updating stone properties, check if selection is still valid
+    if (['brand', 'type', 'color', 'finish', 'slabSize', 'thickness'].includes(field)) {
+      // Create a new filter object with the updated field
+      const newFilter = {
+        brand: field === 'brand' ? value : product.brand,
+        type: field === 'type' ? value : product.type,
+        color: field === 'color' ? value : product.color,
+        finish: field === 'finish' ? value : product.finish,
+        slabSize: field === 'slabSize' ? value : product.slabSize,
+        thickness: field === 'thickness' ? value : product.thickness
+      };
       
-      // Find matching stone
-      const matchingStone = stoneOptions.find(s => 
-        s.Brand === newBrand && 
-        s.Type === newType && 
-        s.Color === newColor
-      );
+      // Check if a stone exists with all selected properties
+      const matchingStone = stoneOptions.find(s => {
+        const sizeMatch = !newFilter.slabSize || 
+          `${s["Slab Width"]}" x ${s["Slab Height"]}"` === newFilter.slabSize;
+        
+        return (!newFilter.brand || s.Brand === newFilter.brand) &&
+               (!newFilter.type || s.Type === newFilter.type) &&
+               (!newFilter.color || s.Color === newFilter.color) &&
+               (!newFilter.finish || s.Finish === newFilter.finish) &&
+               sizeMatch &&
+               (!newFilter.thickness || s.Thickness === newFilter.thickness);
+      });
       
       if (matchingStone) {
+        // Update stone identifier
         const stoneIdentifier = `${matchingStone.Brand} ${matchingStone.Type} - ${matchingStone.Color}`;
         onUpdate(index, 'stone', stoneIdentifier);
-        onUpdate(index, 'finish', matchingStone.Finish); // Auto-set finish
+        
+        // Auto-complete other fields if they're empty
+        if (!product.brand) onUpdate(index, 'brand', matchingStone.Brand);
+        if (!product.type) onUpdate(index, 'type', matchingStone.Type);
+        if (!product.color) onUpdate(index, 'color', matchingStone.Color);
+        if (!product.finish) onUpdate(index, 'finish', matchingStone.Finish);
+        if (!product.slabSize) {
+          onUpdate(index, 'slabSize', `${matchingStone["Slab Width"]}" x ${matchingStone["Slab Height"]}"`);
+        }
+        if (!product.thickness) onUpdate(index, 'thickness', matchingStone.Thickness);
       }
     }
   };
 
-  // Initialize brand, type, color from stone identifier if it exists
+  // Clear invalid selections when options change
   useEffect(() => {
-    if (product.stone && !product.brand) {
-      const matchingStone = stoneOptions.find(s => {
-        const identifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-        return identifier === product.stone;
-      });
-      
-      if (matchingStone) {
-        onUpdate(index, 'brand', matchingStone.Brand);
-        onUpdate(index, 'type', matchingStone.Type);
-        onUpdate(index, 'color', matchingStone.Color);
-        onUpdate(index, 'finish', matchingStone.Finish);
-      }
+    // Check if current brand is still available
+    if (product.brand && !brands.includes(product.brand)) {
+      onUpdate(index, 'brand', '');
     }
-  }, [product.stone, stoneOptions]);
+    // Check if current type is still available
+    if (product.type && !types.includes(product.type)) {
+      onUpdate(index, 'type', '');
+    }
+    // Check if current color is still available
+    if (product.color && !colors.includes(product.color)) {
+      onUpdate(index, 'color', '');
+      setColorFilter('');
+    }
+    // Check if current finish is still available
+    if (product.finish && !finishes.includes(product.finish)) {
+      onUpdate(index, 'finish', '');
+    }
+    // Check if current slab size is still available
+    if (product.slabSize && !slabSizes.includes(product.slabSize)) {
+      onUpdate(index, 'slabSize', '');
+    }
+    // Check if current thickness is still available
+    if (product.thickness && !thicknesses.includes(product.thickness)) {
+      onUpdate(index, 'thickness', '');
+    }
+  }, [brands, types, colors, finishes, slabSizes, thicknesses]);
 
   return (
     <Card className={`p-6 ${product.aiParsed ? 'ring-1 ring-purple-200 bg-purple-50/30' : ''}`}>
@@ -125,151 +192,227 @@ export const ProductCard = ({
         )}
       </div>
       
-      {/* First Row - Brand, Stone Type, Color, Finish */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Brand
-          </label>
-          <select
-            value={product.brand || ''}
-            onChange={(e) => updateField('brand', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="">Select Brand...</option>
-            {brands.map((brand, i) => (
-              <option key={i} value={brand}>{brand}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Stone Type
-          </label>
-          <select
-            value={product.type || ''}
-            onChange={(e) => updateField('type', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="">Select Type...</option>
-            {types.map((type, i) => (
-              <option key={i} value={type}>{type}</option>
-            ))}
-          </select>
-        </div>
-        
-        <div className="relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Color
-          </label>
-          <input
-            type="text"
-            value={product.color || colorFilter}
-            onChange={(e) => {
-              setColorFilter(e.target.value);
-              updateField('color', e.target.value);
-            }}
-            onFocus={() => setShowColorDropdown(true)}
-            onBlur={() => setTimeout(() => setShowColorDropdown(false), 200)}
-            placeholder="Type to filter colors..."
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-          {showColorDropdown && filteredColors.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-              {filteredColors.map((color, i) => (
-                <button
-                  key={i}
-                  onClick={() => {
-                    updateField('color', color);
-                    setColorFilter(color);
-                  }}
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-teal-50 hover:text-teal-700 transition-colors"
-                >
-                  {color}
-                </button>
-              ))}
-            </div>
+      {/* Stone Selection Section */}
+      <div className="mb-6">
+        <h4 className="text-sm font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+          Stone Details {filteredStones.length > 0 && (
+            <span className="text-xs font-normal text-gray-500 ml-2">
+              ({filteredStones.length} matching options)
+            </span>
           )}
+        </h4>
+        
+        {/* First Row - Brand, Stone Type, Color */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Brand {brands.length === 0 && <span className="text-red-500">*</span>}
+            </label>
+            <select
+              value={product.brand || ''}
+              onChange={(e) => updateField('brand', e.target.value)}
+              className={`w-full px-3 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                brands.length === 0 ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >
+              <option value="">All Brands</option>
+              {brands.map((brand, i) => (
+                <option key={i} value={brand}>{brand}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Stone Type {types.length === 0 && <span className="text-red-500">*</span>}
+            </label>
+            <select
+              value={product.type || ''}
+              onChange={(e) => updateField('type', e.target.value)}
+              className={`w-full px-3 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                types.length === 0 ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >
+              <option value="">All Types</option>
+              {types.map((type, i) => (
+                <option key={i} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Color {colors.length === 0 && <span className="text-red-500">*</span>}
+            </label>
+            <input
+              type="text"
+              value={product.color || colorFilter}
+              onChange={(e) => {
+                setColorFilter(e.target.value);
+                if (colors.includes(e.target.value)) {
+                  updateField('color', e.target.value);
+                }
+              }}
+              onFocus={() => setShowColorDropdown(true)}
+              onBlur={() => setTimeout(() => setShowColorDropdown(false), 200)}
+              placeholder="Type to filter..."
+              className={`w-full px-3 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                colors.length === 0 ? 'border-red-300' : 'border-gray-300'
+              }`}
+            />
+            {showColorDropdown && filteredColors.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                {filteredColors.map((color, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      updateField('color', color);
+                      setColorFilter(color);
+                    }}
+                    className="w-full px-3 py-2 text-left text-sm hover:bg-teal-50 hover:text-teal-700 transition-colors"
+                  >
+                    {color}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Finish
-          </label>
-          <select
-            value={product.finish || ''}
-            onChange={(e) => updateField('finish', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="">Select Finish...</option>
-            {finishes.map((finish, i) => (
-              <option key={i} value={finish}>{finish}</option>
-            ))}
-          </select>
+        {/* Second Row - Finish, Slab Size, Thickness */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Finish {finishes.length === 0 && <span className="text-red-500">*</span>}
+            </label>
+            <select
+              value={product.finish || ''}
+              onChange={(e) => updateField('finish', e.target.value)}
+              className={`w-full px-3 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                finishes.length === 0 ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >
+              <option value="">All Finishes</option>
+              {finishes.map((finish, i) => (
+                <option key={i} value={finish}>{finish}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Slab Size {slabSizes.length === 0 && <span className="text-red-500">*</span>}
+            </label>
+            <select
+              value={product.slabSize || ''}
+              onChange={(e) => updateField('slabSize', e.target.value)}
+              className={`w-full px-3 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                slabSizes.length === 0 ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >
+              <option value="">All Sizes</option>
+              {slabSizes.map((size, i) => (
+                <option key={i} value={size}>{size}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Thickness {thicknesses.length === 0 && <span className="text-red-500">*</span>}
+            </label>
+            <select
+              value={product.thickness || ''}
+              onChange={(e) => updateField('thickness', e.target.value)}
+              className={`w-full px-3 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                thicknesses.length === 0 ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >
+              <option value="">All Thicknesses</option>
+              {thicknesses.map((thickness, i) => (
+                <option key={i} value={thickness}>{thickness}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        {/* No matches warning */}
+        {filteredStones.length === 0 && (
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700">
+              No stones match your current selection. Please adjust your filters.
+            </p>
+          </div>
+        )}
+      </div>
+      
+      {/* Piece Details Section */}
+      <div className="mb-6">
+        <h4 className="text-sm font-semibold text-gray-900 mb-3 pb-2 border-b border-gray-200">
+          Piece Details
+        </h4>
+        
+        {/* Third Row - Piece D, Piece L, Quantity, Edge Detail */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Piece D (inches)
+            </label>
+            <input
+              type="number"
+              value={product.depth}
+              onChange={(e) => updateField('depth', e.target.value)}
+              placeholder="24"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Piece L (inches)
+            </label>
+            <input
+              type="number"
+              value={product.width}
+              onChange={(e) => updateField('width', e.target.value)}
+              placeholder="36"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Quantity
+            </label>
+            <input
+              type="number"
+              value={product.quantity}
+              onChange={(e) => updateField('quantity', e.target.value)}
+              min="1"
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Edge Detail
+            </label>
+            <select
+              value={product.edgeDetail}
+              onChange={(e) => updateField('edgeDetail', e.target.value)}
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            >
+              <option value="Eased">Eased</option>
+              <option value="1.5 mitered">1.5" Mitered</option>
+              <option value="Bullnose">Bullnose</option>
+              <option value="Ogee">Ogee</option>
+              <option value="Beveled">Beveled</option>
+            </select>
+          </div>
         </div>
       </div>
       
-      {/* Second Row - Piece D, Piece L, Quantity, Edge Detail */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Piece D (inches)
-          </label>
-          <input
-            type="number"
-            value={product.depth}
-            onChange={(e) => updateField('depth', e.target.value)}
-            placeholder="24"
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Piece L (inches)
-          </label>
-          <input
-            type="number"
-            value={product.width}
-            onChange={(e) => updateField('width', e.target.value)}
-            placeholder="36"
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Quantity
-          </label>
-          <input
-            type="number"
-            value={product.quantity}
-            onChange={(e) => updateField('quantity', e.target.value)}
-            min="1"
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          />
-        </div>
-        
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Edge Detail
-          </label>
-          <select
-            value={product.edgeDetail}
-            onChange={(e) => updateField('edgeDetail', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="Eased">Eased</option>
-            <option value="1.5 mitered">1.5" Mitered</option>
-            <option value="Bullnose">Bullnose</option>
-            <option value="Ogee">Ogee</option>
-            <option value="Beveled">Beveled</option>
-          </select>
-        </div>
-      </div>
-      
-      {/* Third Row - Custom Name, Notes, Upload Drawing */}
+      {/* Additional Info Section */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
