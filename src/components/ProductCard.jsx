@@ -111,40 +111,58 @@ export const ProductCard = ({
   const updateField = (field, value) => {
     onUpdate(index, field, value);
     
-    // When updating stone properties, check if selection is still valid
+    // Cascading reset logic - when a field changes, reset all fields after it
+    if (field === 'brand') {
+      // Reset all fields after brand
+      onUpdate(index, 'type', '');
+      onUpdate(index, 'color', '');
+      onUpdate(index, 'finish', '');
+      onUpdate(index, 'slabSize', '');
+      onUpdate(index, 'thickness', '');
+      onUpdate(index, 'stone', '');
+      setColorFilter('');
+    } else if (field === 'type') {
+      // Reset all fields after type
+      onUpdate(index, 'color', '');
+      onUpdate(index, 'finish', '');
+      onUpdate(index, 'slabSize', '');
+      onUpdate(index, 'thickness', '');
+      onUpdate(index, 'stone', '');
+      setColorFilter('');
+    } else if (field === 'color') {
+      // Reset all fields after color
+      onUpdate(index, 'finish', '');
+      onUpdate(index, 'slabSize', '');
+      onUpdate(index, 'thickness', '');
+      onUpdate(index, 'stone', '');
+    } else if (field === 'finish') {
+      // Reset all fields after finish
+      onUpdate(index, 'slabSize', '');
+      onUpdate(index, 'thickness', '');
+    } else if (field === 'slabSize') {
+      // Reset thickness after slab size
+      onUpdate(index, 'thickness', '');
+    }
+    
+    // Check if we can create a stone identifier after the update
     if (['brand', 'type', 'color', 'finish', 'slabSize', 'thickness'].includes(field)) {
-      // Create a new filter object with the updated field
-      const newFilter = {
-        brand: field === 'brand' ? value : product.brand,
-        type: field === 'type' ? value : product.type,
-        color: field === 'color' ? value : product.color,
-        finish: field === 'finish' ? value : product.finish,
-        slabSize: field === 'slabSize' ? value : product.slabSize,
-        thickness: field === 'thickness' ? value : product.thickness
-      };
+      // Get the current state after updates
+      const newBrand = field === 'brand' ? value : product.brand;
+      const newType = field === 'type' ? value : (field === 'brand' ? '' : product.type);
+      const newColor = field === 'color' ? value : (['brand', 'type'].includes(field) ? '' : product.color);
       
-      // Check if a stone exists with all selected properties
-      const matchingStone = stoneOptions.find(s => {
-        const sizeMatch = !newFilter.slabSize || 
-          `${s["Slab Width"]}" x ${s["Slab Height"]}"` === newFilter.slabSize;
+      // Only create stone identifier if brand, type, and color are all selected
+      if (newBrand && newType && newColor) {
+        const matchingStone = stoneOptions.find(s => 
+          s.Brand === newBrand && 
+          s.Type === newType && 
+          s.Color === newColor
+        );
         
-        return (!newFilter.brand || s.Brand === newFilter.brand) &&
-               (!newFilter.type || s.Type === newFilter.type) &&
-               (!newFilter.color || s.Color === newFilter.color) &&
-               (!newFilter.finish || s.Finish === newFilter.finish) &&
-               sizeMatch &&
-               (!newFilter.thickness || s.Thickness === newFilter.thickness);
-      });
-      
-      // Only update stone identifier if ALL required fields are selected
-      if (newFilter.brand && newFilter.type && newFilter.color) {
         if (matchingStone) {
           const stoneIdentifier = `${matchingStone.Brand} ${matchingStone.Type} - ${matchingStone.Color}`;
           onUpdate(index, 'stone', stoneIdentifier);
         }
-      } else {
-        // Clear stone identifier if not all required fields are selected
-        onUpdate(index, 'stone', '');
       }
     }
   };
@@ -316,11 +334,6 @@ export const ProductCard = ({
                     {color}
                   </button>
                 ))}
-              </div>
-            )}
-            {product.color && (
-              <div className="absolute right-2 top-8 text-xs text-gray-500">
-                Selected: {product.color}
               </div>
             )}
           </div>
