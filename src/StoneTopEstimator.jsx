@@ -22,6 +22,10 @@ export default function StoneTopEstimator() {
   const [products, setProducts] = useState([
     { 
       stone: '', 
+      brand: '',
+      type: '',
+      color: '',
+      finish: '',
       width: '', 
       depth: '', 
       quantity: 1, 
@@ -65,14 +69,7 @@ export default function StoneTopEstimator() {
       .then((data) => {
         console.log("Loaded stone data:", data); // Debug log
         setStoneOptions(data);
-        // Create a unique stone identifier from the new fields
-        const firstStone = data[0];
-        if (firstStone) {
-          const stoneIdentifier = `${firstStone.Brand} ${firstStone.Type} - ${firstStone.Color}`;
-          setProducts((prev) =>
-            prev.map((p) => ({ ...p, stone: stoneIdentifier }))
-          );
-        }
+        // Don't set default stone, let user select
       })
       .catch((error) => {
         console.error("Failed to load stone data:", error);
@@ -88,14 +85,14 @@ export default function StoneTopEstimator() {
   };
 
   const addProduct = () => {
-    const firstStone = stoneOptions[0];
-    const defaultStone = firstStone ? 
-      `${firstStone.Brand} ${firstStone.Type} - ${firstStone.Color}` : '';
-    
     setProducts([
       ...products,
       { 
-        stone: defaultStone, 
+        stone: '', 
+        brand: '',
+        type: '',
+        color: '',
+        finish: '',
         width: '', 
         depth: '', 
         quantity: 1, 
