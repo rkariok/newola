@@ -76,9 +76,12 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
       if (result.products && result.products.length > 0) {
         // Convert to your product format
         const newProducts = result.products.map((p, index) => {
-          // Try to find matching stone or use first one
-          let selectedStone = stoneOptions[0] ? 
-            `${stoneOptions[0].Brand} ${stoneOptions[0].Type} - ${stoneOptions[0].Color}` : '';
+          // Try to find matching stone
+          let selectedBrand = '';
+          let selectedType = '';
+          let selectedColor = '';
+          let selectedFinish = '';
+          let selectedStone = '';
           
           // If AI found a stone type, try to match it
           if (p.stoneType && stoneOptions.length > 0) {
@@ -89,12 +92,20 @@ export const BulkProductImport = ({ stoneOptions, onProductsParsed }) => {
                      stone.Color.toLowerCase().includes(p.stoneType.toLowerCase());
             });
             if (match) {
+              selectedBrand = match.Brand;
+              selectedType = match.Type;
+              selectedColor = match.Color;
+              selectedFinish = match.Finish;
               selectedStone = `${match.Brand} ${match.Type} - ${match.Color}`;
             }
           }
           
           return {
             stone: selectedStone,
+            brand: selectedBrand,
+            type: selectedType,
+            color: selectedColor,
+            finish: selectedFinish,
             width: p.width.toString(),
             depth: p.depth.toString(),
             quantity: p.quantity,
