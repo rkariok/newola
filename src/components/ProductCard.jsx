@@ -1,4 +1,5 @@
 // Save this as: components/ProductCard.jsx
+import { useState, useEffect } from 'react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { X, Upload } from './icons/Icons';
@@ -13,9 +14,72 @@ export const ProductCard = ({
   loadingAI,
   canRemove = true 
 }) => {
+  const [colorFilter, setColorFilter] = useState('');
+  const [showColorDropdown, setShowColorDropdown] = useState(false);
+  
+  // Extract unique values for dropdowns
+  const brands = [...new Set(stoneOptions.map(s => s.Brand))].filter(Boolean);
+  const types = [...new Set(stoneOptions.map(s => s.Type))].filter(Boolean);
+  const finishes = [...new Set(stoneOptions.map(s => s.Finish))].filter(Boolean);
+  
+  // Get colors based on selected brand and type
+  const getAvailableColors = () => {
+    return [...new Set(stoneOptions
+      .filter(s => 
+        (!product.brand || s.Brand === product.brand) &&
+        (!product.type || s.Type === product.type)
+      )
+      .map(s => s.Color)
+    )].filter(Boolean);
+  };
+  
+  const availableColors = getAvailableColors();
+  
+  // Filter colors based on user input
+  const filteredColors = availableColors.filter(color =>
+    color.toLowerCase().startsWith(colorFilter.toLowerCase())
+  );
+
   const updateField = (field, value) => {
     onUpdate(index, field, value);
+    
+    // Update the stone identifier when brand, type, or color changes
+    if (field === 'brand' || field === 'type' || field === 'color') {
+      const newBrand = field === 'brand' ? value : (product.brand || '');
+      const newType = field === 'type' ? value : (product.type || '');
+      const newColor = field === 'color' ? value : (product.color || '');
+      
+      // Find matching stone
+      const matchingStone = stoneOptions.find(s => 
+        s.Brand === newBrand && 
+        s.Type === newType && 
+        s.Color === newColor
+      );
+      
+      if (matchingStone) {
+        const stoneIdentifier = `${matchingStone.Brand} ${matchingStone.Type} - ${matchingStone.Color}`;
+        onUpdate(index, 'stone', stoneIdentifier);
+        onUpdate(index, 'finish', matchingStone.Finish); // Auto-set finish
+      }
+    }
   };
+
+  // Initialize brand, type, color from stone identifier if it exists
+  useEffect(() => {
+    if (product.stone && !product.brand) {
+      const matchingStone = stoneOptions.find(s => {
+        const identifier = `${s.Brand} ${s.Type} - ${s.Color}`;
+        return identifier === product.stone;
+      });
+      
+      if (matchingStone) {
+        onUpdate(index, 'brand', matchingStone.Brand);
+        onUpdate(index, 'type', matchingStone.Type);
+        onUpdate(index, 'color', matchingStone.Color);
+        onUpdate(index, 'finish', matchingStone.Finish);
+      }
+    }
+  }, [product.stone, stoneOptions]);
 
   return (
     <Card className={`p-6 ${product.aiParsed ? 'ring-1 ring-purple-200 bg-purple-50/30' : ''}`}>
@@ -61,51 +125,119 @@ export const ProductCard = ({
         )}
       </div>
       
+      {/* First Row - Brand, Stone Type, Color, Finish */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Brand
+          </label>
+          <select
+            value={product.brand || ''}
+            onChange={(e) => updateField('brand', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value="">Select Brand...</option>
+            {brands.map((brand, i) => (
+              <option key={i} value={brand}>{brand}</option>
+            ))}
+          </select>
+        </div>
+        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Stone Type
           </label>
           <select
-            value={product.stone}
-            onChange={(e) => updateField('stone', e.target.value)}
+            value={product.type || ''}
+            onChange={(e) => updateField('type', e.target.value)}
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
-            <option value="">Select...</option>
-            {stoneOptions.map((stone, i) => {
-              const stoneIdentifier = `${stone.Brand} ${stone.Type} - ${stone.Color}`;
-              return (
-                <option key={i} value={stoneIdentifier}>
-                  {stone.Brand} {stone.Type} - {stone.Color} ({stone.Thickness})
-                </option>
-              );
-            })}
+            <option value="">Select Type...</option>
+            {types.map((type, i) => (
+              <option key={i} value={type}>{type}</option>
+            ))}
           </select>
         </div>
-        <div>
+        
+        <div className="relative">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Width (inches)
+            Color
           </label>
           <input
-            type="number"
-            value={product.width}
-            onChange={(e) => updateField('width', e.target.value)}
-            placeholder="24"
+            type="text"
+            value={product.color || colorFilter}
+            onChange={(e) => {
+              setColorFilter(e.target.value);
+              updateField('color', e.target.value);
+            }}
+            onFocus={() => setShowColorDropdown(true)}
+            onBlur={() => setTimeout(() => setShowColorDropdown(false), 200)}
+            placeholder="Type to filter colors..."
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
+          {showColorDropdown && filteredColors.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+              {filteredColors.map((color, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    updateField('color', color);
+                    setColorFilter(color);
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-teal-50 hover:text-teal-700 transition-colors"
+                >
+                  {color}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Depth (inches)
+            Finish
+          </label>
+          <select
+            value={product.finish || ''}
+            onChange={(e) => updateField('finish', e.target.value)}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          >
+            <option value="">Select Finish...</option>
+            {finishes.map((finish, i) => (
+              <option key={i} value={finish}>{finish}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      
+      {/* Second Row - Piece D, Piece L, Quantity, Edge Detail */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Piece D (inches)
           </label>
           <input
             type="number"
             value={product.depth}
             onChange={(e) => updateField('depth', e.target.value)}
+            placeholder="24"
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Piece L (inches)
+          </label>
+          <input
+            type="number"
+            value={product.width}
+            onChange={(e) => updateField('width', e.target.value)}
             placeholder="36"
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
         </div>
+        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Quantity
@@ -118,9 +250,7 @@ export const ProductCard = ({
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Edge Detail
@@ -137,20 +267,10 @@ export const ProductCard = ({
             <option value="Beveled">Beveled</option>
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Priority
-          </label>
-          <select
-            value={product.priority}
-            onChange={(e) => updateField('priority', e.target.value)}
-            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-          >
-            <option value="normal">Normal</option>
-            <option value="high">High</option>
-            <option value="low">Low</option>
-          </select>
-        </div>
+      </div>
+      
+      {/* Third Row - Custom Name, Notes, Upload Drawing */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Custom Name
@@ -163,6 +283,20 @@ export const ProductCard = ({
             className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
         </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Notes
+          </label>
+          <input
+            type="text"
+            value={product.note}
+            onChange={(e) => updateField('note', e.target.value)}
+            placeholder="Special instructions..."
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+          />
+        </div>
+        
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Upload Drawing
@@ -179,19 +313,6 @@ export const ProductCard = ({
             />
           </label>
         </div>
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Notes
-        </label>
-        <textarea
-          value={product.note}
-          onChange={(e) => updateField('note', e.target.value)}
-          placeholder="Add any special instructions..."
-          rows={2}
-          className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-        />
       </div>
       
       {loadingAI && (
