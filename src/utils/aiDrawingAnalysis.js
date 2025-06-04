@@ -131,11 +131,13 @@ export const handleClaudeMultiplePiecesExtraction = (claudeData, currentIndex, p
     }
     
     // Use the current stone from the product being modified
-    // Extract brand, type, color from the current product
+    // Extract all fields from the current product
     const currentBrand = products[currentIndex].brand || '';
     const currentType = products[currentIndex].type || '';
     const currentColor = products[currentIndex].color || '';
     const currentFinish = products[currentIndex].finish || '';
+    const currentSlabSize = products[currentIndex].slabSize || '';
+    const currentThickness = products[currentIndex].thickness || '';
     const currentStone = products[currentIndex].stone || 
                         (currentBrand && currentType && currentColor ? 
                          `${currentBrand} ${currentType} - ${currentColor}` : '');
@@ -146,6 +148,8 @@ export const handleClaudeMultiplePiecesExtraction = (claudeData, currentIndex, p
       type: currentType,
       color: currentColor,
       finish: currentFinish,
+      slabSize: currentSlabSize,
+      thickness: currentThickness,
       width: group.width.toString(),
       depth: group.depth.toString(),
       quantity: group.quantity,
