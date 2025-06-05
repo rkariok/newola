@@ -2,18 +2,30 @@
 
 export const calculateMaxPiecesPerSlab = (pieceW, pieceH, slabW, slabH, includeKerf, kerfWidth) => {
   const kerf = includeKerf ? kerfWidth : 0;
+  
+  // Try both slab orientations and return the maximum
+  const maxPieces1 = calculateMaxPiecesForOrientation(pieceW, pieceH, slabW, slabH, kerf);
+  const maxPieces2 = calculateMaxPiecesForOrientation(pieceW, pieceH, slabH, slabW, kerf);
+  
+  return Math.max(maxPieces1, maxPieces2);
+};
+
+const calculateMaxPiecesForOrientation = (pieceW, pieceH, slabW, slabH, kerf) => {
   let maxPieces = 0;
 
+  // Option 1: All pieces in original orientation
   const fit1W = Math.floor((slabW + kerf) / (pieceW + kerf));
   const fit1H = Math.floor((slabH + kerf) / (pieceH + kerf));
   const option1 = fit1W * fit1H;
 
+  // Option 2: All pieces rotated 90 degrees
   const fit2W = Math.floor((slabW + kerf) / (pieceH + kerf));
   const fit2H = Math.floor((slabH + kerf) / (pieceW + kerf));
   const option2 = fit2W * fit2H;
 
   maxPieces = Math.max(option1, option2);
 
+  // Option 3: Mixed arrangements - vertical pieces first, then horizontal
   for (let rows1 = 0; rows1 <= Math.floor((slabH + kerf) / (pieceH + kerf)); rows1++) {
     const usedHeight1 = Math.max(0, rows1 * (pieceH + kerf) - kerf);
     const remainingHeight = slabH - usedHeight1;
@@ -29,6 +41,7 @@ export const calculateMaxPiecesPerSlab = (pieceW, pieceH, slabW, slabH, includeK
     }
   }
 
+  // Option 4: Mixed arrangements - horizontal pieces first, then vertical
   for (let rows2 = 0; rows2 <= Math.floor((slabH + kerf) / (pieceW + kerf)); rows2++) {
     const usedHeight2 = Math.max(0, rows2 * (pieceW + kerf) - kerf);
     const remainingHeight = slabH - usedHeight2;
