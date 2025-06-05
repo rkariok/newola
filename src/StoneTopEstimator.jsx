@@ -156,6 +156,17 @@ export default function StoneTopEstimator() {
 
   // Calculate all products - Updated to always include kerf consideration
   const calculateAll = () => {
+    // Ensure all products have stone identifiers
+    const productsWithStones = products.map(product => {
+      if (!product.stone && product.brand && product.type && product.color) {
+        return {
+          ...product,
+          stone: `${product.brand} ${product.type} - ${product.color}`
+        };
+      }
+      return product;
+    });
+    
     let results;
     let optimizationResults = null;
     
@@ -167,17 +178,18 @@ export default function StoneTopEstimator() {
     
     if (settings.multiProductOptimization) {
       // Use multi-type optimization
-      optimizationResults = optimizeMultiTypeLayout(products, stoneOptions, updatedSettings);
-      results = applyMultiTypeOptimization(products, optimizationResults, stoneOptions, updatedSettings);
+      optimizationResults = optimizeMultiTypeLayout(productsWithStones, stoneOptions, updatedSettings);
+      results = applyMultiTypeOptimization(productsWithStones, optimizationResults, stoneOptions, updatedSettings);
       setOptimizationData(optimizationResults);
     } else {
       // Use standard calculation
-      results = products.map((product) => 
+      results = productsWithStones.map((product) => 
         calculateProductResults(product, stoneOptions, updatedSettings)
       );
       setOptimizationData(null);
     }
     
+    console.log('Calculation results:', results);
     setAllResults(results);
     setShowResults(true);
   };
