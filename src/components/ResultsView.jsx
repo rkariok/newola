@@ -3,7 +3,7 @@ import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { 
   Sparkles, DollarSign, Package, TrendingUp, BarChart3, 
-  Info, CheckCircle, FileText, Mail 
+  Info, CheckCircle, FileText, Mail, AlertCircle 
 } from './icons/Icons';
 import { SlabLayoutVisualization } from './SlabLayoutVisualization';
 import { MultiProductSlabVisualization } from './MultiProductSlabVisualization';
@@ -57,7 +57,14 @@ export const ResultsView = ({
         return;
       }
       
-      const slabCost = parseFloat(stone["Slab Cost"]) || 0;
+      const parseCurrency = (value) => {
+        if (!value) return 0;
+        if (typeof value === 'number') return value;
+        const cleaned = value.toString().replace(/[$,\s]/g, '');
+        return parseFloat(cleaned) || 0;
+      };
+      
+      const slabCost = parseCurrency(stone["Slab Cost"]);
       const markup = parseFloat(stone["Mark Up"]) || 1;
       const breakageBuffer = settings.breakageBuffer || 10;
       
@@ -390,57 +397,64 @@ export const ResultsView = ({
                   </div>
                   
                   {p.result ? (
-                    <>
-                      {/* Type Details Grid - Better spacing */}
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-6">
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Size</p>
-                          <p className="font-semibold text-gray-900">{p.width}×{p.depth}"</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Qty</p>
-                          <p className="font-semibold text-gray-900">{p.quantity}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Edge</p>
-                          <p className="font-semibold text-gray-900">{p.edgeDetail}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Area</p>
-                          <p className="font-semibold text-gray-900">{p.result?.usableAreaSqft?.toFixed(1)} ft²</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Per Slab</p>
-                          <p className="font-semibold text-purple-600">{p.result?.topsPerSlab || '-'}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Slabs</p>
-                          <p className="font-semibold text-blue-600">{p.result?.totalSlabsNeeded?.toFixed(1) || '-'}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Efficiency</p>
-                          <p className={`font-bold ${
-                            (p.result?.efficiency || 0) > 80 ? 'text-green-600' : 
-                            (p.result?.efficiency || 0) > 60 ? 'text-yellow-600' : 'text-red-600'
-                          }`}>
-                            {p.result?.efficiency?.toFixed(0) || '0'}%
-                          </p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Total</p>
-                          <p className="font-bold text-green-600 text-xl">${p.result?.finalPrice?.toFixed(0) || '0'}</p>
-                        </div>
+                    p.result.error ? (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                        <p className="text-amber-700 font-medium">⚠️ {p.result.error}</p>
+                        <p className="text-amber-600 text-sm mt-1">Please check the Google Sheet data for this stone.</p>
                       </div>
-                      
-                      {/* Cost Breakdown - New addition */}
-                      <div className="flex justify-end gap-6 text-sm text-gray-600 pt-2 border-t border-gray-100">
-                        <span>Material: <span className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup)?.toFixed(0)}</span></span>
-                        <span>Fabrication: <span className="font-semibold text-orange-600">${((p.result?.fabricationCost || 0) * markup)?.toFixed(0)}</span></span>
-                        {p.result?.installationCost > 0 && (
-                          <span>Installation: <span className="font-semibold text-green-600">${((p.result?.installationCost || 0) * markup)?.toFixed(0)}</span></span>
-                        )}
-                      </div>
-                    </>
+                    ) : (
+                      <>
+                        {/* Type Details Grid - Better spacing */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 gap-6">
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Size</p>
+                            <p className="font-semibold text-gray-900">{p.width}×{p.depth}"</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Qty</p>
+                            <p className="font-semibold text-gray-900">{p.quantity}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Edge</p>
+                            <p className="font-semibold text-gray-900">{p.edgeDetail}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Area</p>
+                            <p className="font-semibold text-gray-900">{p.result?.usableAreaSqft?.toFixed(1)} ft²</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Per Slab</p>
+                            <p className="font-semibold text-purple-600">{p.result?.topsPerSlab || '-'}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Slabs</p>
+                            <p className="font-semibold text-blue-600">{p.result?.totalSlabsNeeded?.toFixed(1) || '-'}</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Efficiency</p>
+                            <p className={`font-bold ${
+                              (p.result?.efficiency || 0) > 80 ? 'text-green-600' : 
+                              (p.result?.efficiency || 0) > 60 ? 'text-yellow-600' : 'text-red-600'
+                            }`}>
+                              {p.result?.efficiency?.toFixed(0) || '0'}%
+                            </p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Total</p>
+                            <p className="font-bold text-green-600 text-xl">${p.result?.finalPrice?.toFixed(0) || '0'}</p>
+                          </div>
+                        </div>
+                        
+                        {/* Cost Breakdown - New addition */}
+                        <div className="flex justify-end gap-6 text-sm text-gray-600 pt-2 border-t border-gray-100">
+                          <span>Material: <span className="font-semibold text-blue-600">${((p.result?.materialCost || 0) * markup)?.toFixed(0)}</span></span>
+                          <span>Fabrication: <span className="font-semibold text-orange-600">${((p.result?.fabricationCost || 0) * markup)?.toFixed(0)}</span></span>
+                          {p.result?.installationCost > 0 && (
+                            <span>Installation: <span className="font-semibold text-green-600">${((p.result?.installationCost || 0) * markup)?.toFixed(0)}</span></span>
+                          )}
+                        </div>
+                      </>
+                    )
                   ) : (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                       <p className="text-red-700 font-medium">Unable to calculate - Missing stone selection or dimensions</p>
