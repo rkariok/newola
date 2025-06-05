@@ -8,14 +8,25 @@ export const optimizeMultiTypeLayout = (products, stoneOptions, settings) => {
     products.forEach((product, index) => {
       if (!product.stone || !product.width || !product.depth) return;
       
-      if (!productsByStone[product.stone]) {
-        productsByStone[product.stone] = [];
+      // Create a consistent stone key
+      let stoneKey = product.stone;
+      if (!stoneKey && product.brand && product.type && product.color) {
+        stoneKey = `${product.brand} ${product.type} - ${product.color}`;
+      }
+      
+      if (!stoneKey) {
+        console.log('Skipping product without stone identification:', product);
+        return;
+      }
+      
+      if (!productsByStone[stoneKey]) {
+        productsByStone[stoneKey] = [];
       }
       
       // Create pieces for each product
       const quantity = parseInt(product.quantity) || 1;
       for (let i = 0; i < quantity; i++) {
-        productsByStone[product.stone].push({
+        productsByStone[stoneKey].push({
           productIndex: index,
           pieceIndex: i,
           width: parseFloat(product.width),
@@ -27,6 +38,8 @@ export const optimizeMultiTypeLayout = (products, stoneOptions, settings) => {
         });
       }
     });
+    
+    console.log('Products grouped by stone:', Object.keys(productsByStone));
     
     const optimizedResults = {};
     
