@@ -13,48 +13,118 @@ export const calculateMaxPiecesPerSlab = (pieceW, pieceH, slabW, slabH, includeK
 const calculateMaxPiecesForOrientation = (pieceW, pieceH, slabW, slabH, kerf) => {
   let maxPieces = 0;
 
-  // Option 1: All pieces in original orientation
+  // Option 1: All pieces in original orientation (vertical)
   const fit1W = Math.floor((slabW + kerf) / (pieceW + kerf));
   const fit1H = Math.floor((slabH + kerf) / (pieceH + kerf));
   const option1 = fit1W * fit1H;
+  maxPieces = Math.max(maxPieces, option1);
 
-  // Option 2: All pieces rotated 90 degrees
+  // Option 2: All pieces rotated 90 degrees (horizontal)
   const fit2W = Math.floor((slabW + kerf) / (pieceH + kerf));
   const fit2H = Math.floor((slabH + kerf) / (pieceW + kerf));
   const option2 = fit2W * fit2H;
+  maxPieces = Math.max(maxPieces, option2);
 
-  maxPieces = Math.max(option1, option2);
-
-  // Option 3: Mixed arrangements - vertical pieces first, then horizontal
-  for (let rows1 = 0; rows1 <= Math.floor((slabH + kerf) / (pieceH + kerf)); rows1++) {
-    const usedHeight1 = Math.max(0, rows1 * (pieceH + kerf) - kerf);
-    const remainingHeight = slabH - usedHeight1;
+  // Option 3: Mixed arrangements - try ALL possible combinations of vertical rows
+  // This is the key fix - we need to try every possible number of vertical rows
+  const maxVerticalRows = Math.floor((slabH + kerf) / (pieceH + kerf));
+  
+  for (let verticalRows = 0; verticalRows <= maxVerticalRows; verticalRows++) {
+    // Calculate vertical pieces
+    const verticalHeight = verticalRows > 0 ? verticalRows * pieceH + (verticalRows - 1) * kerf : 0;
+    const verticalCols = Math.floor((slabW + kerf) / (pieceW + kerf));
+    const verticalPieces = verticalRows * verticalCols;
     
-    const pieces1 = rows1 * Math.floor((slabW + kerf) / (pieceW + kerf));
+    // Calculate remaining height
+    const remainingHeight = slabH - verticalHeight;
     
+    // Try to fit horizontal pieces in remaining space
+    let horizontalPieces = 0;
     if (remainingHeight >= pieceW) {
-      const rows2 = Math.floor((remainingHeight + kerf) / (pieceW + kerf));
-      const pieces2 = rows2 * Math.floor((slabW + kerf) / (pieceH + kerf));
-      maxPieces = Math.max(maxPieces, pieces1 + pieces2);
-    } else {
-      maxPieces = Math.max(maxPieces, pieces1);
+      // Need at least pieceW height to fit a rotated piece
+      const horizontalRows = Math.floor((remainingHeight + kerf) / (pieceW + kerf));
+      const horizontalCols = Math.floor((slabW + kerf) / (pieceH + kerf));
+      horizontalPieces = horizontalRows * horizontalCols;
     }
+    
+    const totalPieces = verticalPieces + horizontalPieces;
+    maxPieces = Math.max(maxPieces, totalPieces);
   }
 
-  // Option 4: Mixed arrangements - horizontal pieces first, then vertical
-  for (let rows2 = 0; rows2 <= Math.floor((slabH + kerf) / (pieceW + kerf)); rows2++) {
-    const usedHeight2 = Math.max(0, rows2 * (pieceW + kerf) - kerf);
-    const remainingHeight = slabH - usedHeight2;
+  // Option 4: Mixed arrangements - try ALL possible combinations of horizontal rows
+  // This ensures we don't miss arrangements like 1 horizontal row + many vertical pieces
+  const maxHorizontalRows = Math.floor((slabH + kerf) / (pieceW + kerf));
+  
+  for (let horizontalRows = 0; horizontalRows <= maxHorizontalRows; horizontalRows++) {
+    // Calculate horizontal pieces
+    const horizontalHeight = horizontalRows > 0 ? horizontalRows * pieceW + (horizontalRows - 1) * kerf : 0;
+    const horizontalCols = Math.floor((slabW + kerf) / (pieceH + kerf));
+    const horizontalPieces = horizontalRows * horizontalCols;
     
-    const pieces2 = rows2 * Math.floor((slabW + kerf) / (pieceH + kerf));
+    // Calculate remaining height
+    const remainingHeight = slabH - horizontalHeight;
     
+    // Try to fit vertical pieces in remaining space
+    let verticalPieces = 0;
     if (remainingHeight >= pieceH) {
-      const rows1 = Math.floor((remainingHeight + kerf) / (pieceH + kerf));
-      const pieces1 = rows1 * Math.floor((slabW + kerf) / (pieceW + kerf));
-      maxPieces = Math.max(maxPieces, pieces1 + pieces2);
-    } else {
-      maxPieces = Math.max(maxPieces, pieces2);
+      // Need at least pieceH height to fit a vertical piece
+      const verticalRows = Math.floor((remainingHeight + kerf) / (pieceH + kerf));
+      const verticalCols = Math.floor((slabW + kerf) / (pieceW + kerf));
+      verticalPieces = verticalRows * verticalCols;
     }
+    
+    const totalPieces = horizontalPieces + verticalPieces;
+    maxPieces = Math.max(maxPieces, totalPieces);
+  }
+
+  // Option 5: Try column-based arrangements (vertical columns first)
+  const maxVerticalCols = Math.floor((slabW + kerf) / (pieceW + kerf));
+  
+  for (let verticalCols = 0; verticalCols <= maxVerticalCols; verticalCols++) {
+    // Calculate vertical pieces
+    const verticalWidth = verticalCols > 0 ? verticalCols * pieceW + (verticalCols - 1) * kerf : 0;
+    const verticalRows = Math.floor((slabH + kerf) / (pieceH + kerf));
+    const verticalPieces = verticalCols * verticalRows;
+    
+    // Calculate remaining width
+    const remainingWidth = slabW - verticalWidth;
+    
+    // Try to fit horizontal pieces in remaining space
+    let horizontalPieces = 0;
+    if (remainingWidth >= pieceH) {
+      // Need at least pieceH width to fit a rotated piece
+      const horizontalCols = Math.floor((remainingWidth + kerf) / (pieceH + kerf));
+      const horizontalRows = Math.floor((slabH + kerf) / (pieceW + kerf));
+      horizontalPieces = horizontalCols * horizontalRows;
+    }
+    
+    const totalPieces = verticalPieces + horizontalPieces;
+    maxPieces = Math.max(maxPieces, totalPieces);
+  }
+
+  // Option 6: Try column-based arrangements (horizontal columns first)
+  const maxHorizontalCols = Math.floor((slabW + kerf) / (pieceH + kerf));
+  
+  for (let horizontalCols = 0; horizontalCols <= maxHorizontalCols; horizontalCols++) {
+    // Calculate horizontal pieces
+    const horizontalWidth = horizontalCols > 0 ? horizontalCols * pieceH + (horizontalCols - 1) * kerf : 0;
+    const horizontalRows = Math.floor((slabH + kerf) / (pieceW + kerf));
+    const horizontalPieces = horizontalCols * horizontalRows;
+    
+    // Calculate remaining width
+    const remainingWidth = slabW - horizontalWidth;
+    
+    // Try to fit vertical pieces in remaining space
+    let verticalPieces = 0;
+    if (remainingWidth >= pieceW) {
+      // Need at least pieceW width to fit a vertical piece
+      const verticalCols = Math.floor((remainingWidth + kerf) / (pieceW + kerf));
+      const verticalRows = Math.floor((slabH + kerf) / (pieceH + kerf));
+      verticalPieces = verticalCols * verticalRows;
+    }
+    
+    const totalPieces = horizontalPieces + verticalPieces;
+    maxPieces = Math.max(maxPieces, totalPieces);
   }
 
   return maxPieces;
