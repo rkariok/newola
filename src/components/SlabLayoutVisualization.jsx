@@ -17,103 +17,282 @@ export const SlabLayoutVisualization = ({ pieces, slabWidth, slabHeight, maxPiec
   const kerf = includeKerf ? kerfWidth : 0;
 
   const generateOptimalLayout = () => {
-    const layout = [];
     const targetPieces = showMaxLayout ? maxPiecesPerSlab : Math.min(pieces.length, maxPiecesPerSlab);
     
-    const verticalCols = Math.floor((slabWidth + kerf) / (pieceWidth + kerf));
-    const verticalRows = Math.floor((slabHeight + kerf) / (pieceHeight + kerf));
-    const verticalTotal = verticalCols * verticalRows;
-    
-    const horizontalCols = Math.floor((slabWidth + kerf) / (pieceHeight + kerf));
-    const horizontalRows = Math.floor((slabHeight + kerf) / (pieceWidth + kerf));
-    const horizontalTotal = horizontalCols * horizontalRows;
-    
-    if (verticalTotal >= targetPieces) {
-      for (let row = 0; row < verticalRows && layout.length < targetPieces; row++) {
-        for (let col = 0; col < verticalCols && layout.length < targetPieces; col++) {
-          layout.push({
-            x: col * (pieceWidth + kerf),
-            y: row * (pieceHeight + kerf),
-            width: pieceWidth,
-            height: pieceHeight,
-            orientation: 'vertical',
-            id: layout.length + 1
-          });
-        }
-      }
-    } else if (horizontalTotal >= targetPieces) {
-      for (let row = 0; row < horizontalRows && layout.length < targetPieces; row++) {
-        for (let col = 0; col < horizontalCols && layout.length < targetPieces; col++) {
-          layout.push({
-            x: col * (pieceHeight + kerf),
-            y: row * (pieceWidth + kerf),
-            width: pieceHeight,
-            height: pieceWidth,
-            orientation: 'horizontal',
-            id: layout.length + 1
-          });
-        }
-      }
-    } else {
-      const vRow = Math.floor((slabHeight + kerf) / (pieceHeight + kerf));
-      const vCols = Math.floor((slabWidth + kerf) / (pieceWidth + kerf));
+    // Function to calculate pieces for a specific orientation
+    const calculateLayoutForOrientation = (slabW, slabH, isSlabRotated = false) => {
+      const layouts = [];
       
-      if (vRow > 0) {
-        for (let col = 0; col < vCols && layout.length < targetPieces; col++) {
-          layout.push({
-            x: col * (pieceWidth + kerf),
-            y: 0,
-            width: pieceWidth,
-            height: pieceHeight,
-            orientation: 'vertical',
-            id: layout.length + 1
-          });
+      // Option 1: All pieces vertical
+      const verticalCols = Math.floor((slabW + kerf) / (pieceWidth + kerf));
+      const verticalRows = Math.floor((slabH + kerf) / (pieceHeight + kerf));
+      const verticalTotal = verticalCols * verticalRows;
+      
+      if (verticalTotal > 0) {
+        const layout = [];
+        for (let row = 0; row < verticalRows && layout.length < targetPieces; row++) {
+          for (let col = 0; col < verticalCols && layout.length < targetPieces; col++) {
+            layout.push({
+              x: col * (pieceWidth + kerf),
+              y: row * (pieceHeight + kerf),
+              width: pieceWidth,
+              height: pieceHeight,
+              rotated: false,
+              id: layout.length + 1
+            });
+          }
+        }
+        layouts.push({ 
+          layout, 
+          count: layout.length,
+          slabWidth: slabW,
+          slabHeight: slabH,
+          isSlabRotated 
+        });
+      }
+      
+      // Option 2: All pieces horizontal
+      const horizontalCols = Math.floor((slabW + kerf) / (pieceHeight + kerf));
+      const horizontalRows = Math.floor((slabH + kerf) / (pieceWidth + kerf));
+      const horizontalTotal = horizontalCols * horizontalRows;
+      
+      if (horizontalTotal > 0) {
+        const layout = [];
+        for (let row = 0; row < horizontalRows && layout.length < targetPieces; row++) {
+          for (let col = 0; col < horizontalCols && layout.length < targetPieces; col++) {
+            layout.push({
+              x: col * (pieceHeight + kerf),
+              y: row * (pieceWidth + kerf),
+              width: pieceHeight,
+              height: pieceWidth,
+              rotated: true,
+              id: layout.length + 1
+            });
+          }
+        }
+        layouts.push({ 
+          layout, 
+          count: layout.length,
+          slabWidth: slabW,
+          slabHeight: slabH,
+          isSlabRotated 
+        });
+      }
+      
+      // Option 3: Mixed - try all possible vertical rows
+      const maxVerticalRows = Math.floor((slabH + kerf) / (pieceHeight + kerf));
+      
+      for (let vRows = 0; vRows <= maxVerticalRows; vRows++) {
+        const layout = [];
+        
+        // Add vertical pieces
+        const vCols = Math.floor((slabW + kerf) / (pieceWidth + kerf));
+        for (let row = 0; row < vRows && layout.length < targetPieces; row++) {
+          for (let col = 0; col < vCols && layout.length < targetPieces; col++) {
+            layout.push({
+              x: col * (pieceWidth + kerf),
+              y: row * (pieceHeight + kerf),
+              width: pieceWidth,
+              height: pieceHeight,
+              rotated: false,
+              id: layout.length + 1
+            });
+          }
         }
         
-        const usedHeight = pieceHeight + kerf;
-        const remainingHeight = slabHeight - usedHeight;
+        // Calculate remaining space and add horizontal pieces
+        const usedHeight = vRows > 0 ? vRows * pieceHeight + (vRows - 1) * kerf : 0;
+        const remainingHeight = slabH - usedHeight;
         
-        if (remainingHeight >= pieceWidth - kerf) {
+        if (remainingHeight >= pieceWidth) {
           const hRows = Math.floor((remainingHeight + kerf) / (pieceWidth + kerf));
-          const hCols = Math.floor((slabWidth + kerf) / (pieceHeight + kerf));
+          const hCols = Math.floor((slabW + kerf) / (pieceHeight + kerf));
           
           for (let row = 0; row < hRows && layout.length < targetPieces; row++) {
             for (let col = 0; col < hCols && layout.length < targetPieces; col++) {
               layout.push({
                 x: col * (pieceHeight + kerf),
-                y: usedHeight + row * (pieceWidth + kerf),
+                y: usedHeight + (usedHeight > 0 ? kerf : 0) + row * (pieceWidth + kerf),
                 width: pieceHeight,
                 height: pieceWidth,
-                orientation: 'horizontal',
+                rotated: true,
                 id: layout.length + 1
               });
             }
           }
         }
+        
+        if (layout.length > 0) {
+          layouts.push({ 
+            layout, 
+            count: layout.length,
+            slabWidth: slabW,
+            slabHeight: slabH,
+            isSlabRotated 
+          });
+        }
+      }
+      
+      // Option 4: Mixed - try all possible horizontal rows
+      const maxHorizontalRows = Math.floor((slabH + kerf) / (pieceWidth + kerf));
+      
+      for (let hRows = 0; hRows <= maxHorizontalRows; hRows++) {
+        const layout = [];
+        
+        // Add horizontal pieces
+        const hCols = Math.floor((slabW + kerf) / (pieceHeight + kerf));
+        for (let row = 0; row < hRows && layout.length < targetPieces; row++) {
+          for (let col = 0; col < hCols && layout.length < targetPieces; col++) {
+            layout.push({
+              x: col * (pieceHeight + kerf),
+              y: row * (pieceWidth + kerf),
+              width: pieceHeight,
+              height: pieceWidth,
+              rotated: true,
+              id: layout.length + 1
+            });
+          }
+        }
+        
+        // Calculate remaining space and add vertical pieces
+        const usedHeight = hRows > 0 ? hRows * pieceWidth + (hRows - 1) * kerf : 0;
+        const remainingHeight = slabH - usedHeight;
+        
+        if (remainingHeight >= pieceHeight) {
+          const vRows = Math.floor((remainingHeight + kerf) / (pieceHeight + kerf));
+          const vCols = Math.floor((slabW + kerf) / (pieceWidth + kerf));
+          
+          for (let row = 0; row < vRows && layout.length < targetPieces; row++) {
+            for (let col = 0; col < vCols && layout.length < targetPieces; col++) {
+              layout.push({
+                x: col * (pieceWidth + kerf),
+                y: usedHeight + (usedHeight > 0 ? kerf : 0) + row * (pieceHeight + kerf),
+                width: pieceWidth,
+                height: pieceHeight,
+                rotated: false,
+                id: layout.length + 1
+              });
+            }
+          }
+        }
+        
+        if (layout.length > 0) {
+          layouts.push({ 
+            layout, 
+            count: layout.length,
+            slabWidth: slabW,
+            slabHeight: slabH,
+            isSlabRotated 
+          });
+        }
+      }
+      
+      // Option 5: Column-based mixed arrangements (vertical columns first)
+      const maxVerticalCols = Math.floor((slabW + kerf) / (pieceWidth + kerf));
+      
+      for (let vCols = 0; vCols <= maxVerticalCols; vCols++) {
+        const layout = [];
+        
+        // Add vertical pieces
+        const vRows = Math.floor((slabH + kerf) / (pieceHeight + kerf));
+        for (let col = 0; col < vCols && layout.length < targetPieces; col++) {
+          for (let row = 0; row < vRows && layout.length < targetPieces; row++) {
+            layout.push({
+              x: col * (pieceWidth + kerf),
+              y: row * (pieceHeight + kerf),
+              width: pieceWidth,
+              height: pieceHeight,
+              rotated: false,
+              id: layout.length + 1
+            });
+          }
+        }
+        
+        // Calculate remaining space and add horizontal pieces
+        const usedWidth = vCols > 0 ? vCols * pieceWidth + (vCols - 1) * kerf : 0;
+        const remainingWidth = slabW - usedWidth;
+        
+        if (remainingWidth >= pieceHeight) {
+          const hCols = Math.floor((remainingWidth + kerf) / (pieceHeight + kerf));
+          const hRows = Math.floor((slabH + kerf) / (pieceWidth + kerf));
+          
+          for (let col = 0; col < hCols && layout.length < targetPieces; col++) {
+            for (let row = 0; row < hRows && layout.length < targetPieces; row++) {
+              layout.push({
+                x: usedWidth + (usedWidth > 0 ? kerf : 0) + col * (pieceHeight + kerf),
+                y: row * (pieceWidth + kerf),
+                width: pieceHeight,
+                height: pieceWidth,
+                rotated: true,
+                id: layout.length + 1
+              });
+            }
+          }
+        }
+        
+        if (layout.length > 0) {
+          layouts.push({ 
+            layout, 
+            count: layout.length,
+            slabWidth: slabW,
+            slabHeight: slabH,
+            isSlabRotated 
+          });
+        }
+      }
+      
+      return layouts;
+    };
+    
+    // Try both slab orientations
+    const layouts1 = calculateLayoutForOrientation(slabWidth, slabHeight, false);
+    const layouts2 = calculateLayoutForOrientation(slabHeight, slabWidth, true);
+    const allLayouts = [...layouts1, ...layouts2];
+    
+    // Find the best layout
+    let bestLayout = allLayouts[0] || { layout: [], count: 0, slabWidth, slabHeight, isSlabRotated: false };
+    
+    // First, try to find a layout that exactly matches maxPiecesPerSlab
+    for (const layoutOption of allLayouts) {
+      if (layoutOption.count === maxPiecesPerSlab) {
+        bestLayout = layoutOption;
+        break;
       }
     }
     
-    return layout;
+    // If no exact match, use the layout with the most pieces (up to targetPieces)
+    if (bestLayout.count !== maxPiecesPerSlab) {
+      for (const layoutOption of allLayouts) {
+        if (layoutOption.count > bestLayout.count && layoutOption.count <= targetPieces) {
+          bestLayout = layoutOption;
+        }
+      }
+    }
+    
+    return bestLayout;
   };
 
-  const layoutPieces = generateOptimalLayout();
+  const bestLayout = generateOptimalLayout();
+  const layoutPieces = bestLayout.layout;
+  const displaySlabWidth = bestLayout.slabWidth;
+  const displaySlabHeight = bestLayout.slabHeight;
   
   const containerWidth = 500;
   const containerHeight = 300;
-  const scaleX = containerWidth / slabWidth;
-  const scaleY = containerHeight / slabHeight;
+  const scaleX = containerWidth / displaySlabWidth;
+  const scaleY = containerHeight / displaySlabHeight;
   const scale = Math.min(scaleX, scaleY) * 0.85;
 
-  const scaledSlabWidth = slabWidth * scale;
-  const scaledSlabHeight = slabHeight * scale;
+  const scaledSlabWidth = displaySlabWidth * scale;
+  const scaledSlabHeight = displaySlabHeight * scale;
 
   // Generate grid lines
   const gridLines = [];
   const gridSpacing = 12; // inches
-  for (let x = gridSpacing; x < slabWidth; x += gridSpacing) {
+  for (let x = gridSpacing; x < displaySlabWidth; x += gridSpacing) {
     gridLines.push({ x1: x * scale, y1: 0, x2: x * scale, y2: scaledSlabHeight });
   }
-  for (let y = gridSpacing; y < slabHeight; y += gridSpacing) {
+  for (let y = gridSpacing; y < displaySlabHeight; y += gridSpacing) {
     gridLines.push({ x1: 0, y1: y * scale, x2: scaledSlabWidth, y2: y * scale });
   }
 
@@ -121,7 +300,10 @@ export const SlabLayoutVisualization = ({ pieces, slabWidth, slabHeight, maxPiec
     <div className="relative">
       <div className="mb-3 flex items-center justify-center gap-2 text-sm text-gray-600">
         <Package className="w-4 h-4" />
-        <span>Slab Dimensions: {slabWidth}" × {slabHeight}"</span>
+        <span>Slab Dimensions: {displaySlabWidth}" × {displaySlabHeight}"</span>
+        {bestLayout.isSlabRotated && (
+          <span className="text-xs text-purple-600 font-medium">(Rotated for optimal fit)</span>
+        )}
       </div>
       
       <div 
@@ -170,8 +352,8 @@ export const SlabLayoutVisualization = ({ pieces, slabWidth, slabHeight, maxPiec
           >
             <div className="text-white font-bold text-sm">{piece.id}</div>
             <div className="text-emerald-100 text-[10px]">{piece.width}×{piece.height}"</div>
-            {piece.orientation === 'horizontal' && (
-              <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[8px] text-white">
+            {piece.rotated && (
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center text-[8px] text-white font-bold">
                 R
               </div>
             )}
@@ -193,9 +375,11 @@ export const SlabLayoutVisualization = ({ pieces, slabWidth, slabHeight, maxPiec
       </div>
       
       <div className="mt-2 text-center text-sm text-gray-600">
-        {pieces.length < maxPiecesPerSlab ? 
-          `Showing ${layoutPieces.length} of ${pieces.length} pieces (max ${maxPiecesPerSlab} per slab)` :
-          `Showing ${layoutPieces.length} pieces (maximum capacity)`
+        {layoutPieces.length === maxPiecesPerSlab ? 
+          `Showing optimal layout: ${layoutPieces.length} pieces` :
+          pieces.length < maxPiecesPerSlab ? 
+            `Showing ${layoutPieces.length} of ${pieces.length} pieces (max ${maxPiecesPerSlab} per slab)` :
+            `Showing ${layoutPieces.length} pieces (expected ${maxPiecesPerSlab} per slab)`
         }
       </div>
     </div>
