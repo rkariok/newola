@@ -79,18 +79,55 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
 
   console.log('Found stone:', stone);
 
-  const slabCost = parseFloat(stone["Slab Cost"]);
-  const fabCost = parseFloat(stone["Fab Cost"]);
-  const markup = parseFloat(stone["Mark Up"]);
+  // Parse currency values by removing $ and commas
+  const parseCurrency = (value) => {
+    if (!value) return 0;
+    if (typeof value === 'number') return value;
+    // Remove $, commas, and any spaces
+    const cleaned = value.toString().replace(/[$,\s]/g, '');
+    return parseFloat(cleaned) || 0;
+  };
+
+  const slabCost = parseCurrency(stone["Slab Cost"]);
+  const fabCost = parseCurrency(stone["Fab Cost"]);
+  const markup = parseFloat(stone["Mark Up"]) || 1;
   const w = parseFloat(product.width);
   const d = parseFloat(product.depth);
-  const quantity = parseInt(product.quantity);
+  const quantity = parseInt(product.quantity) || 1;
 
-  console.log('Calculation values:', { slabCost, fabCost, markup, w, d, quantity });
+  console.log('Calculation values:', { 
+    slabCost, 
+    fabCost, 
+    markup, 
+    w, 
+    d, 
+    quantity,
+    rawSlabCost: stone["Slab Cost"],
+    rawFabCost: stone["Fab Cost"]
+  });
 
-  if (!w || !d || isNaN(slabCost) || isNaN(fabCost) || isNaN(markup)) {
-    console.log('Invalid values for calculation:', { w, d, slabCost, fabCost, markup });
+  if (!w || !d || w <= 0 || d <= 0) {
+    console.log('Invalid dimensions:', { w, d });
     return { ...product, result: null };
+  }
+  
+  if (slabCost <= 0) {
+    console.log('Invalid or missing slab cost for stone:', stone);
+    return { 
+      ...product, 
+      result: {
+        error: 'Missing slab cost in database',
+        usableAreaSqft: (w * d * quantity) / 144,
+        totalSlabsNeeded: 0,
+        efficiency: 0,
+        materialCost: 0,
+        fabricationCost: 0,
+        installationCost: 0,
+        rawCost: 0,
+        finalPrice: 0,
+        topsPerSlab: 0
+      }
+    };
   }
 
   // Get slab dimensions - either from product selection or from stone data
