@@ -63,9 +63,21 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   });
   
   if (!stone) {
-    console.log('No stone found for:', product);
+    console.log('No stone found for product:', {
+      stone: product.stone,
+      brand: product.brand,
+      type: product.type,
+      color: product.color
+    });
+    console.log('Available stones:', stoneOptions.map(s => ({
+      Brand: s.Brand,
+      Type: s.Type,
+      Color: s.Color
+    })));
     return { ...product, result: null };
   }
+
+  console.log('Found stone:', stone);
 
   const slabCost = parseFloat(stone["Slab Cost"]);
   const fabCost = parseFloat(stone["Fab Cost"]);
@@ -73,6 +85,8 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   const w = parseFloat(product.width);
   const d = parseFloat(product.depth);
   const quantity = parseInt(product.quantity);
+
+  console.log('Calculation values:', { slabCost, fabCost, markup, w, d, quantity });
 
   if (!w || !d || isNaN(slabCost) || isNaN(fabCost) || isNaN(markup)) {
     console.log('Invalid values for calculation:', { w, d, slabCost, fabCost, markup });
