@@ -38,7 +38,14 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
       });
       if (!stone) return;
       
-      const slabCost = parseFloat(stone["Slab Cost"]) || 0;
+      const parseCurrency = (value) => {
+        if (!value) return 0;
+        if (typeof value === 'number') return value;
+        const cleaned = value.toString().replace(/[$,\s]/g, '');
+        return parseFloat(cleaned) || 0;
+      };
+      
+      const slabCost = parseCurrency(stone["Slab Cost"]);
       const markup = parseFloat(stone["Mark Up"]) || 1;
       const breakageBuffer = settings.breakageBuffer || 10;
       
