@@ -1,9 +1,10 @@
 // Save this as: components/ResultsView.jsx
+import { useState } from 'react';
 import { Button } from './ui/Button';
 import { Card } from './ui/Card';
 import { 
   Sparkles, DollarSign, Package, TrendingUp, BarChart3, 
-  Info, CheckCircle, FileText, Mail, AlertCircle 
+  Info, CheckCircle, FileText, Mail, AlertCircle, ChevronLeft, ChevronRight 
 } from './icons/Icons';
 import { SlabLayoutVisualization } from './SlabLayoutVisualization';
 import { MultiProductSlabVisualization } from './MultiProductSlabVisualization';
@@ -20,6 +21,9 @@ export const ResultsView = ({
   sendingEmail,
   emailStatus 
 }) => {
+  // State for navigation between product visualizations
+  const [currentProductIndex, setCurrentProductIndex] = useState(0);
+  
   // Calculate totals based on optimization mode (same logic as PDF)
   let totalPrice, totalSlabs, avgEfficiency;
   
@@ -101,6 +105,18 @@ export const ResultsView = ({
   }
   
   console.log('Final totals:', { totalPrice, totalSlabs, avgEfficiency });
+
+  // Filter products with valid results for visualization
+  const productsWithResults = allResults.filter(p => p.result && !p.result.error);
+
+  // Navigation handlers
+  const navigateToPrevious = () => {
+    setCurrentProductIndex(prev => prev > 0 ? prev - 1 : productsWithResults.length - 1);
+  };
+
+  const navigateToNext = () => {
+    setCurrentProductIndex(prev => prev < productsWithResults.length - 1 ? prev + 1 : 0);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -186,7 +202,7 @@ export const ResultsView = ({
         )}
 
         {/* Slab Layout Visualization */}
-        {settings.showVisualLayouts && (
+        {settings.showVisualLayouts && productsWithResults.length > 0 && (
           <div className="space-y-6 mb-8">
             {settings?.multiProductOptimization && optimizationData ? (
               // Show multi-product optimized layouts
@@ -194,12 +210,10 @@ export const ResultsView = ({
                 if (optimizationResult.error || !optimizationResult.slabs) return null;
                 
                 const stone = stoneOptions.find(s => {
-                  // Match by composite identifier
                   const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
                   if (stoneIdentifier === stoneType) {
                     return true;
                   }
-                  // Check first product in results  
                   const firstProduct = allResults.find(p => p.stone === stoneType);
                   if (firstProduct) {
                     return s.Brand === firstProduct.brand && 
@@ -257,39 +271,61 @@ export const ResultsView = ({
                 );
               })
             ) : (
-              // Show individual product layouts (standard mode)
-              allResults.map((product, productIndex) => {
-                if (!product.result) return null;
+              // Show individual product layouts (standard mode) with navigation
+              <Card className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-teal-600" />
+                    Layout Visualization: {productsWithResults[currentProductIndex]?.customName || `Type ${currentProductIndex + 1}`}
+                  </div>
+                  {productsWithResults.length > 1 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={navigateToPrevious}
+                        className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                        title="Previous type"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                      </button>
+                      <span className="text-sm text-gray-500 px-2">
+                        {currentProductIndex + 1} of {productsWithResults.length}
+                      </span>
+                      <button
+                        onClick={navigateToNext}
+                        className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                        title="Next type"
+                      >
+                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </div>
+                  )}
+                </h3>
                 
-                const stone = stoneOptions.find(s => {
-                  // Match by composite identifier
-                  const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
-                  if (stoneIdentifier === product.stone) {
-                    return true;
-                  }
-                  // Match by individual fields
-                  return s.Brand === product.brand && 
-                         s.Type === product.type && 
-                         s.Color === product.color;
-                });
-                const slabWidth = parseFloat(stone?.["Slab Width"]) || 126;
-                const slabHeight = parseFloat(stone?.["Slab Height"]) || 63;
-                
-                const pieces = Array(parseInt(product.quantity) || 1).fill().map((_, i) => ({
-                  id: i + 1,
-                  width: parseFloat(product.width) || 0,
-                  depth: parseFloat(product.depth) || 0,
-                  name: `${product.stone} #${i + 1}`
-                }));
-                
-                return (
-                  <Card key={productIndex} className="p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5 text-teal-600" />
-                      Layout Visualization: {product.customName || `Type ${productIndex + 1}`}
-                    </h3>
+                <div className="bg-gray-50 rounded-xl p-8">
+                  {(() => {
+                    const product = productsWithResults[currentProductIndex];
+                    if (!product) return null;
                     
-                    <div className="bg-gray-50 rounded-xl p-8">
+                    const stone = stoneOptions.find(s => {
+                      const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
+                      if (stoneIdentifier === product.stone) {
+                        return true;
+                      }
+                      return s.Brand === product.brand && 
+                             s.Type === product.type && 
+                             s.Color === product.color;
+                    });
+                    const slabWidth = parseFloat(stone?.["Slab Width"]) || 126;
+                    const slabHeight = parseFloat(stone?.["Slab Height"]) || 63;
+                    
+                    const pieces = Array(parseInt(product.quantity) || 1).fill().map((_, i) => ({
+                      id: i + 1,
+                      width: parseFloat(product.width) || 0,
+                      depth: parseFloat(product.depth) || 0,
+                      name: `${product.stone} #${i + 1}`
+                    }));
+                    
+                    return (
                       <SlabLayoutVisualization 
                         pieces={pieces}
                         slabWidth={slabWidth}
@@ -299,61 +335,71 @@ export const ResultsView = ({
                         kerfWidth={settings.kerfWidth}
                         showMaxLayout={false}
                       />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                      <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 border border-gray-200">
-                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                          <Info className="w-4 h-4" />
-                          Layout Details
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Piece Size:</span>
-                            <span className="font-medium">{product.width}" × {product.depth}"</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Slab Size:</span>
-                            <span className="font-medium">{slabWidth}" × {slabHeight}"</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Kerf Width:</span>
-                            <span className="font-medium">{settings.kerfWidth > 0 ? `${settings.kerfWidth}"` : 'No Kerf'}</span>
-                          </div>
-                        </div>
+                    );
+                  })()}
+                </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-lg p-4 border border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <Info className="w-4 h-4" />
+                      Layout Details
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Piece Size:</span>
+                        <span className="font-medium">{productsWithResults[currentProductIndex]?.width}" × {productsWithResults[currentProductIndex]?.depth}"</span>
                       </div>
-                      
-                      <div className="bg-gradient-to-br from-teal-50 to-white rounded-lg p-4 border border-teal-200">
-                        <h4 className="text-sm font-semibold text-teal-700 mb-3 flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4" />
-                          Optimization Results
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-teal-600">Max Pieces/Slab:</span>
-                            <span className="font-bold text-teal-700">{product.result.topsPerSlab}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-teal-600">Total Quantity:</span>
-                            <span className="font-bold text-teal-700">{product.quantity}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-teal-600">Efficiency:</span>
-                            <span className={`font-bold ${
-                              product.result.efficiency > 80 ? 'text-green-600' : 
-                              product.result.efficiency > 60 ? 'text-yellow-600' : 'text-red-600'
-                            }`}>{product.result.efficiency?.toFixed(1) || '0'}%</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-teal-600">Slabs Needed:</span>
-                            <span className="font-bold text-teal-700">{product.result.totalSlabsNeeded}</span>
-                          </div>
-                        </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Slab Size:</span>
+                        <span className="font-medium">
+                          {(() => {
+                            const product = productsWithResults[currentProductIndex];
+                            const stone = stoneOptions.find(s => {
+                              const stoneIdentifier = `${s.Brand} ${s.Type} - ${s.Color}`;
+                              return stoneIdentifier === product.stone || 
+                                     (s.Brand === product.brand && s.Type === product.type && s.Color === product.color);
+                            });
+                            return `${stone?.["Slab Width"] || 126}" × ${stone?.["Slab Height"] || 63}"`;
+                          })()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Kerf Width:</span>
+                        <span className="font-medium">{settings.kerfWidth > 0 ? `${settings.kerfWidth}"` : 'No Kerf'}</span>
                       </div>
                     </div>
-                  </Card>
-                );
-              })
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-teal-50 to-white rounded-lg p-4 border border-teal-200">
+                    <h4 className="text-sm font-semibold text-teal-700 mb-3 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Optimization Results
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-teal-600">Max Pieces/Slab:</span>
+                        <span className="font-bold text-teal-700">{productsWithResults[currentProductIndex]?.result?.topsPerSlab}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-teal-600">Total Quantity:</span>
+                        <span className="font-bold text-teal-700">{productsWithResults[currentProductIndex]?.quantity}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-teal-600">Efficiency:</span>
+                        <span className={`font-bold ${
+                          productsWithResults[currentProductIndex]?.result?.efficiency > 80 ? 'text-green-600' : 
+                          productsWithResults[currentProductIndex]?.result?.efficiency > 60 ? 'text-yellow-600' : 'text-red-600'
+                        }`}>{productsWithResults[currentProductIndex]?.result?.efficiency?.toFixed(1) || '0'}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-teal-600">Slabs Needed:</span>
+                        <span className="font-bold text-teal-700">{productsWithResults[currentProductIndex]?.result?.totalSlabsNeeded}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </Card>
             )}
           </div>
         )}
