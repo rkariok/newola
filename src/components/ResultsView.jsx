@@ -23,6 +23,10 @@ export const ResultsView = ({
   // Calculate totals based on optimization mode (same logic as PDF)
   let totalPrice, totalSlabs, avgEfficiency;
   
+  console.log('Calculating totals with allResults:', allResults);
+  console.log('Settings:', settings);
+  console.log('OptimizationData:', optimizationData);
+  
   if (settings?.multiProductOptimization && optimizationData) {
     // For multi-product optimization, use the actual optimized values
     totalSlabs = Object.values(optimizationData).reduce((sum, result) => {
@@ -48,7 +52,10 @@ export const ResultsView = ({
         }
         return false;
       });
-      if (!stone) return;
+      if (!stone) {
+        console.log('No stone found for optimization:', stoneType);
+        return;
+      }
       
       const slabCost = parseFloat(stone["Slab Cost"]) || 0;
       const markup = parseFloat(stone["Mark Up"]) || 1;
@@ -77,11 +84,16 @@ export const ResultsView = ({
       : '0';
   } else {
     // Standard calculation
-    totalPrice = allResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
-    totalSlabs = allResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
-    avgEfficiency = allResults.length > 0 ? 
-      (allResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / allResults.length).toFixed(1) : '0';
+    const validResults = allResults.filter(p => p.result && p.result.finalPrice);
+    console.log('Valid results for pricing:', validResults);
+    
+    totalPrice = validResults.reduce((sum, p) => sum + (p.result?.finalPrice || 0), 0).toFixed(2);
+    totalSlabs = validResults.reduce((sum, p) => sum + (p.result?.totalSlabsNeeded || 0), 0);
+    avgEfficiency = validResults.length > 0 ? 
+      (validResults.reduce((sum, p) => sum + (p.result?.efficiency || 0), 0) / validResults.length).toFixed(1) : '0';
   }
+  
+  console.log('Final totals:', { totalPrice, totalSlabs, avgEfficiency });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -145,6 +157,21 @@ export const ResultsView = ({
                 <h3 className="font-semibold text-purple-900">Multi-Type Optimization Applied</h3>
                 <p className="text-sm text-purple-700 mt-1">
                   Types with the same stone have been optimized together to minimize waste and reduce total slabs needed.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Warning if any products failed calculation */}
+        {allResults.some(p => !p.result) && (
+          <Card className="p-4 mb-8 bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+              <div>
+                <h3 className="font-semibold text-red-900">Some Products Could Not Be Calculated</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  Please ensure all products have complete stone selection (Brand, Type, Color) and dimensions.
                 </p>
               </div>
             </div>
