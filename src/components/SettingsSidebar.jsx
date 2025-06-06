@@ -64,7 +64,7 @@ export const SettingsSidebar = ({ settings, onChange }) => {
             Material Buffer
           </label>
           <select
-            value={settings.materialBuffer !== undefined ? settings.materialBuffer : (settings.breakageBuffer || 10)}
+            value={settings.materialBuffer !== undefined ? settings.materialBuffer : (settings.breakageBuffer !== undefined ? settings.breakageBuffer : 0)}
             onChange={(e) => updateSetting('materialBuffer', parseInt(e.target.value))}
             className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
