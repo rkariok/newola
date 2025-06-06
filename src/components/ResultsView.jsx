@@ -70,7 +70,7 @@ export const ResultsView = ({
       
       const slabCost = parseCurrency(stone["Slab Cost"]);
       const markup = parseFloat(stone["Mark Up"]) || 1;
-      const materialBuffer = settings.materialBuffer !== undefined ? settings.materialBuffer : 10;
+      const materialBuffer = settings.materialBuffer !== undefined ? settings.materialBuffer : 0;
       
       // Material cost for optimized slabs
       const materialCost = slabCost * result.totalSlabs * (1 + materialBuffer / 100) * markup;
