@@ -309,9 +309,9 @@ export const applyMultiTypeOptimization = (products, optimizationResults, stoneO
       const fabCost = parseCurrency(stone["Fab Cost"]);
       const markup = parseFloat(stone["Mark Up"]) || 1;
       
-      // Calculate cost per slab including breakage buffer
-      const breakageBuffer = settings.breakageBuffer || 10;
-      const costPerSlab = slabCost * (1 + breakageBuffer / 100);
+      // Calculate cost per slab including material buffer
+      const materialBuffer = settings.materialBuffer || 10;
+      const costPerSlab = slabCost * (1 + materialBuffer / 100);
       
       // CRITICAL FIX: Use the actual optimized slab count
       const actualSlabsUsed = result.totalSlabs;
