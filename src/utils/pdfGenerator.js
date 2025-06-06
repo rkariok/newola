@@ -47,10 +47,10 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
       
       const slabCost = parseCurrency(stone["Slab Cost"]);
       const markup = parseFloat(stone["Mark Up"]) || 1;
-      const breakageBuffer = settings.breakageBuffer || 10;
+      const materialBuffer = settings.materialBuffer || 10;
       
       // Material cost for optimized slabs
-      const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
+      const materialCost = slabCost * result.totalSlabs * (1 + materialBuffer / 100) * markup;
       
       // Add fabrication and installation costs from all products WITH MARKUP
       const fabricationCost = allResults
@@ -387,7 +387,8 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
         }
         
         .footer-content {
-          margin-bottom: 20px;
+          margin-bottom:
+          20px;
         }
         
         .footer-content p {
@@ -670,9 +671,9 @@ const showPrintView = (allResults, userInfo, stoneOptions, settings, optimizatio
       
       const slabCost = parseFloat(stone["Slab Cost"]) || 0;
       const markup = parseFloat(stone["Mark Up"]) || 1;
-      const breakageBuffer = settings.breakageBuffer || 10;
+      const materialBuffer = settings.materialBuffer || 10;
       
-      const materialCost = slabCost * result.totalSlabs * (1 + breakageBuffer / 100) * markup;
+      const materialCost = slabCost * result.totalSlabs * (1 + materialBuffer / 100) * markup;
       const fabricationCost = allResults
         .filter(p => p.stone === stoneType && p.result)
         .reduce((sum, p) => sum + ((p.result.fabricationCost || 0) * markup), 0);
