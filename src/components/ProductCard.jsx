@@ -1,4 +1,10 @@
-// Save this as: components/ProductCard.jsx
+<select
+              value={product.slabSize || ''}
+              onChange={(e) => updateField('slabSize', e.target.value)}
+              className={`w-full px-4 py-2.5 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                slabSizes.length === 0 ? 'border-red-300' : 'border-gray-300'
+              }`}
+            >// Save this as: components/ProductCard.jsx
 import { useState, useEffect } from 'react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
@@ -300,7 +306,7 @@ export const ProductCard = ({
             <select
               value={product.brand || ''}
               onChange={(e) => updateField('brand', e.target.value)}
-              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+              className={`w-full px-4 py-2.5 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                 brands.length === 0 ? 'border-red-300' : 'border-gray-300'
               }`}
             >
@@ -318,7 +324,7 @@ export const ProductCard = ({
             <select
               value={product.type || ''}
               onChange={(e) => updateField('type', e.target.value)}
-              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+              className={`w-full px-4 py-2.5 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                 types.length === 0 ? 'border-red-300' : 'border-gray-300'
               }`}
             >
@@ -357,7 +363,7 @@ export const ProductCard = ({
                 }, 200);
               }}
               placeholder="Type to filter colors..."
-              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+              className={`w-full px-3 py-1.5 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                 colors.length === 0 ? 'border-red-300' : 'border-gray-300'
               }`}
             />
@@ -389,7 +395,7 @@ export const ProductCard = ({
             <select
               value={product.finish || ''}
               onChange={(e) => updateField('finish', e.target.value)}
-              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+              className={`w-full px-4 py-2.5 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                 finishes.length === 0 ? 'border-red-300' : 'border-gray-300'
               }`}
             >
@@ -425,7 +431,7 @@ export const ProductCard = ({
             <select
               value={product.thickness || ''}
               onChange={(e) => updateField('thickness', e.target.value)}
-              className={`w-full px-4 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+              className={`w-full px-4 py-2.5 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
                 thicknesses.length === 0 ? 'border-red-300' : 'border-gray-300'
               }`}
             >
@@ -464,7 +470,7 @@ export const ProductCard = ({
               value={product.depth}
               onChange={(e) => updateField('depth', e.target.value)}
               placeholder="24"
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             />
           </div>
           
@@ -477,7 +483,7 @@ export const ProductCard = ({
               value={product.width}
               onChange={(e) => updateField('width', e.target.value)}
               placeholder="36"
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             />
           </div>
           
@@ -490,7 +496,7 @@ export const ProductCard = ({
               value={product.quantity}
               onChange={(e) => updateField('quantity', e.target.value)}
               min="1"
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             />
           </div>
           
@@ -501,7 +507,7 @@ export const ProductCard = ({
             <select
               value={product.edgeDetail}
               onChange={(e) => updateField('edgeDetail', e.target.value)}
-              className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
             >
               <option value="Eased">Eased</option>
               <option value="1.5 mitered">1.5" Mitered</option>
@@ -524,7 +530,7 @@ export const ProductCard = ({
             value={product.customName}
             onChange={(e) => updateField('customName', e.target.value)}
             placeholder="Kitchen Island"
-            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
         </div>
         
@@ -537,7 +543,7 @@ export const ProductCard = ({
             value={product.note}
             onChange={(e) => updateField('note', e.target.value)}
             placeholder="Special instructions..."
-            className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                          className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           />
         </div>
         
@@ -545,7 +551,7 @@ export const ProductCard = ({
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Upload Drawing
           </label>
-          <label className="w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
+                      <label className="w-full px-3 py-1.5 bg-gray-50 border border-gray-300 rounded-lg text-sm cursor-pointer hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
             <Upload className="w-4 h-4" />
             {loadingAI ? 'Analyzing...' : 'Choose File'}
             <input
