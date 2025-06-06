@@ -253,7 +253,7 @@ export const calculateProductResults = (product, stoneOptions, settings) => {
   const efficiency = totalSlabArea > 0 ? (totalUsedArea / totalSlabArea) * 100 : 0;
   
   // Calculate costs WITHOUT markup first
-  const materialCost = (slabCost * totalSlabsNeeded) * (1 + settings.breakageBuffer/100);
+  const materialCost = (slabCost * totalSlabsNeeded) * (1 + (settings.materialBuffer || 10)/100);
   const fabricationCost = settings.includeFabrication !== false ? (usableAreaSqft * fabCost) : 0;
   
   // Add installation cost if enabled
