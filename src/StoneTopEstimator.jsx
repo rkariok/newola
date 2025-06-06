@@ -53,7 +53,7 @@ export default function StoneTopEstimator() {
     kerfWidth: 0.125,
     includeFabrication: true,
     includeInstallation: false,
-    breakageBuffer: 10,
+    materialBuffer: 10,
     showVisualLayouts: true,
     multiProductOptimization: false
   });
