@@ -47,7 +47,7 @@ export const generateQuotePDF = (allResults, userInfo, stoneOptions, settings, o
       
       const slabCost = parseCurrency(stone["Slab Cost"]);
       const markup = parseFloat(stone["Mark Up"]) || 1;
-      const materialBuffer = settings.materialBuffer !== undefined ? settings.materialBuffer : 10;
+      const materialBuffer = settings.materialBuffer !== undefined ? settings.materialBuffer : 0;
       
       // Material cost for optimized slabs
       const materialCost = slabCost * result.totalSlabs * (1 + materialBuffer / 100) * markup;
@@ -670,7 +670,7 @@ const showPrintView = (allResults, userInfo, stoneOptions, settings, optimizatio
       
       const slabCost = parseFloat(stone["Slab Cost"]) || 0;
       const markup = parseFloat(stone["Mark Up"]) || 1;
-      const materialBuffer = settings.materialBuffer !== undefined ? settings.materialBuffer : 10;
+      const materialBuffer = settings.materialBuffer !== undefined ? settings.materialBuffer : 0;
       
       const materialCost = slabCost * result.totalSlabs * (1 + materialBuffer / 100) * markup;
       const fabricationCost = allResults
