@@ -606,14 +606,6 @@ export const ResultsView = ({
           <div className="flex items-center justify-center gap-6 flex-wrap">
             <span className="flex items-center gap-1">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              Accurate as of {new Date().toLocaleDateString()}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};="w-4 h-4 text-green-500" />
               Licensed & Insured
             </span>
             <span className="flex items-center gap-1">
@@ -625,4 +617,12 @@ export const ResultsView = ({
               AI-Optimized Layouts
             </span>
             <span className="flex items-center gap-1">
-              <CheckCircle className
+              <CheckCircle className="w-4 h-4 text-green-500" />
+              Accurate as of {new Date().toLocaleDateString()}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
