@@ -310,7 +310,7 @@ export const applyMultiTypeOptimization = (products, optimizationResults, stoneO
       const markup = parseFloat(stone["Mark Up"]) || 1;
       
       // Calculate cost per slab including material buffer
-      const materialBuffer = settings.materialBuffer !== undefined ? settings.materialBuffer : 10;
+      const materialBuffer = settings.materialBuffer !== undefined ? settings.materialBuffer : 0;
       const costPerSlab = slabCost * (1 + materialBuffer / 100);
       
       // CRITICAL FIX: Use the actual optimized slab count
