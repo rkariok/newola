@@ -51,7 +51,7 @@ export const SettingsSidebar = ({ settings, onChange }) => {
             onChange={(e) => updateSetting('kerfWidth', parseFloat(e.target.value))}
             className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
-            <option value={0}>No Kerf / Zero Kerf</option>
+            <option value={0}>No Kerf</option>
             <option value={0.125}>1/8" (0.125) - Standard</option>
             <option value={0.1875}>3/16" (0.1875) - Thick</option>
             <option value={0.25}>1/4" (0.25) - Heavy Duty</option>
